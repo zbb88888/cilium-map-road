@@ -21,9 +21,8 @@
 | P1 | [cep-vni-propagation.md](cep-vni-propagation.md) | CEP VNI annotation → 全节点 ip@vni:N（跨节点 VNI 传播） | ✅ |
 | P2 | [service-clusterip-to-backend.md](service-clusterip-to-backend.md) | Service ClusterIP → backend（❌ 启动拒绝+数据面绕过） | ✅ |
 | P2 | [fragment-vni-scope.md](fragment-vni-scope.md) | 分片 VNI 作用域（frag key 加 vni + fail-closed） | ✅ |
+| P3 | [assembly-selfcheck.md](assembly-selfcheck.md) | 装配自检（TestAgentCell → Populate → 门禁） | ✅ |
 
-## 待找路（按优先级）
+## 待找路
 
-| 优先级 | 路 | 为什么排这个优先级 |
-| --- | --- | --- |
-| P3 | 装配自检路 | TestAgentCell → Populate → 缺失类型/降级门禁 |
+> 目前无待找路。新特性到来时，回到 `map/` 找路、回到三问校验、落到 `road/` 存路。
