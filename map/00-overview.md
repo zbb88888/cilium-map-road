@@ -214,10 +214,10 @@ Cilium 的顶层接口是 **Kubernetes CRD + CNI + kvstore + daemon REST API**�
 
 | 面 | daemon agent | operator | clustermesh-apiserver | hubble-relay |
 | --- | --- | --- | --- | --- |
-| 1 控制面 | Endpoint/Identity/IPAM/Node/watchers | 集群级控制器（identitygc/endpointgc/ipam/gateway） | 多集群控制 | — |
-| 2 缓存面 | ipcache/endpointmanager/policy repo | — | 远程集群缓存 | — |
-| 3 转发面 | loader/maps/BPF | — | — | — |
-| 4 切面 | monitor/metrics/hubble server | operator metrics | — | hubble 中继 |
+| 1 控制面 | Endpoint/Identity/IPAM/Node/watchers（8） | identitygc/ciliumidentity/ciliumendpointslice/endpointgc/lbipam/nodeipam/gatewayapi/ingress/bgp/…（19） | KVStoreMesh/clustersHandler（3） | — |
+| 2 缓存面 | ipcache/endpointmanager/policy repo（5） | — | 远程集群缓存 | — |
+| 3 转发面 | loader/maps/BPF（6） | — | — | — |
+| 4 切面 | monitor/parser/metrics/hubble server（6） | operator metrics | — | relay/server.Server/healthServer（2） |
 | 5 策略面 | policy repo/distillery/L7 | policyderivative | — | — |
 | 6 CT/NAT | ctmap/nat map | — | — | — |
 | 7 服务/LB | loadbalancer/kpr/maglev | lbipam/bgp | — | — |
@@ -226,3 +226,4 @@ Cilium 的顶层接口是 **Kubernetes CRD + CNI + kvstore + daemon REST API**�
 | 10 装配 | daemon/cmd/cells.go | operator/cmd/root.go | 自己的 hive | 自己的 hive |
 
 > 结论：**层不放进组件**。先分层，再把组件拆到各层；矩阵的代码化产物就是装配面（hive）。
+> 完整对象账本（82 对象 × 归属层 × 读者/写者）见 [completeness.md](completeness.md)。

@@ -27,6 +27,7 @@
 | 补缺 | [endpoint-restore.md](endpoint-restore.md) | endpoint 恢复（VNI 序列化+重读，面 9） | ✅ |
 | 组件 | [operator-identity-gc.md](operator-identity-gc.md) | operator identity GC（组件首条路，identity 键安全） | ✅ |
 | 补缺 | [observability-pipeline.md](observability-pipeline.md) | monitor 事件 → flow → metrics（面 4 主路） | ✅ |
+| 组件 | [clustermesh-kvstoremesh.md](clustermesh-kvstoremesh.md) | KVStoreMesh 跨集群同步（clustermesh-apiserver 首条路） | ✅ |
 
 ## 覆盖矩阵（路 × 层）
 
@@ -46,7 +47,28 @@
 | observability-pipeline | | | | ✅ | | | | | | |
 | **覆盖计数** | 9 | 4 | 8 | 3 | 4 | 1 | 1 | 1 | 1 | 3 |
 
-> 十面全部有路覆盖。**组件维度**：agent（绝大多数路）、operator（operator-identity-gc）、clustermesh/hubble-relay（尚待补，见 map/todo）。
+> 十面全部有路覆盖。**组件维度**见下方「路 × 组件」矩阵。
+
+## 覆盖矩阵（路 × 组件）
+
+| 路 \ 组件 | agent | operator | clustermesh-apiserver | hubble-relay |
+| --- | --- | --- | --- | --- |
+| ip-to-identity | ✅ | | | |
+| vni-ip-to-identity | ✅ | | | |
+| cnp-to-policymap | ✅ | | | |
+| cep-vni-propagation | ✅ | | | |
+| service-clusterip-to-backend | ✅ | | | |
+| fragment-vni-scope | ✅ | | | |
+| assembly-selfcheck | ✅ | | | |
+| mutual-auth | ✅ | ✅ | | |
+| encryption-egress-rejection | ✅ | | | |
+| endpoint-restore | ✅ | | | |
+| operator-identity-gc | | ✅ | | |
+| observability-pipeline | ✅ | | | ✅ |
+| clustermesh-kvstoremesh | | | ✅ | |
+| **覆盖计数** | 11 | 2 | 1 | 1 |
+
+> 四个组件全部有路覆盖。
 
 ## 待找路
 

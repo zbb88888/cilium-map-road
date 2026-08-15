@@ -26,14 +26,14 @@
 - 现状：账本里 operator 19 对象只有粗粒度读写边（读 CRD/kvstore，写 CRD/心跳）。
 - 动作：至少对 `identitygc.GC`/`endpointgc.GC`/`lbipam` 三个对象细化读者/写者。
 
-## P3：road 覆盖矩阵缺「组件」维度 ⬜（部分已补）
+## P3：road 覆盖矩阵缺「组件」维度 ✅
 
-- [x] 矩阵已加组件维度说明行（agent/operator/clustermesh/hubble-relay）
-- [x] 修正覆盖计数错误：层 3=8（原 9）、层 5=4（原 5）
-- [ ] 可进一步做成「路 × 组件」独立矩阵
+- [x] 新增独立「路 × 组件」矩阵（agent/operator/clustermesh-apiserver/hubble-relay 四组件全覆盖）
+- [x] `map/00-overview.md` 层×组件矩阵刷新（82 对象 × 4 组件）
+- [x] 铺 `road/clustermesh-kvstoremesh.md` 补齐 clustermesh-apiserver 零覆盖
 
-## P3：术语/编号一致性收尾 ⬜
+## P3：术语/编号一致性收尾 ✅
 
-- [x] broken link 已查无
-- [x] 三处数字已核对：十面索引 / 82 对象 / 覆盖矩阵（层3=8、层5=4）
-- [ ] 最终全量 grep 核对一次
+- [x] broken link 全量查无
+- [x] 数字核对：十面索引 / 82 对象（30+5+6+8+7+5+6+4+5+6）/ 覆盖矩阵（层+组件）
+- [x] operator/clustermesh/hubble-relay 对象读写边细化入账

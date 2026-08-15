@@ -101,7 +101,17 @@
 | 10 | Hive/Cell/Module/Agent | TestAgentCell* | cell（provide） | ✅（装配） |
 | 10 | TestAgentCell / TestAgentCellNativeVPC | Hive（校验） | — | ✅（门禁） |
 
+### operator / clustermesh / hubble-relay 侧对象（粗粒度读写边）
+
+| 归属层 | 对象 | 读者 | 写者 | 完备性 |
+| --- | --- | --- | --- | --- |
+| 1 | identitygc.GC | CiliumIdentity/CEP/CES、kvstore 心跳 | CiliumIdentity（删除）/ kvstore | ✅（identity 键安全） |
+| 1 | ciliumidentity | pod/ns labels | CiliumIdentity（派生） | ❌ 启动即拒（不知 VNI） |
+| 1 | ciliumendpointslice | CEP | CES | ❌ 启动即拒（无法携带 VNI） |
+| 1 | endpointgc.GC | CEP | CEP（删除） | ✅（CEP 带 VNI annotation） |
+| 1 | lbipam / nodeipam | Service/Node | LB/Node IP 分配 | ✅（集群级键） |
+| 1 | KVStoreMesh | 本地 kvstore、远程 client | 本地 kvstore 镜像 | ✅（集群级键透传） |
+| 4 | relay/server.Server | 各节点 Hubble flow | gRPC 导出 | ✅（vni_id 透传） |
+
 > 结论：82 个对象无孤儿、无悬空状态，读虚写实边全部对齐。
-> operator/clustermesh 侧对象的读者/写者粗粒度：读 K8s CRD/kvstore，写 CiliumIdentity/CES/CEP/心跳或对应集群级配置；
-> 其中 `ciliumidentity`、`ciliumendpointslice` 在 native-vpc 下启动即拒（无法携带 VNI），见 `map/01-control-plane.md` §8。
 > 新增对象时，必须先回答：它属于哪一层、读谁、写谁——三问缺一不可入图。
