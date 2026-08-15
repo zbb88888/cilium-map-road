@@ -120,3 +120,9 @@ flowchart TD
 
 > 装配面**读**每个 cell 的依赖、**写**每个 cell 的产出，用 `Populate()` 把十面对象图钉在一起；
 > `TestAgentCellNativeVPC` 是 VNI 语义在组件维度不丢链的最终门禁。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[assembly-selfcheck](../road/assembly-selfcheck.md)、[mutual-auth](../road/mutual-auth.md)、[encryption-egress-rejection](../road/encryption-egress-rejection.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

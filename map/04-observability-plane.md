@@ -137,3 +137,18 @@ flowchart TD
 
 > 切面**读**转发面事件与缓存面的 `(VNI, IP)` 状态，**写**带 `vni_id` 的 flow 与带 vni 标签的指标，
 > 让两个 VPC 共享同一 IP 的流量在可观察性维度仍然可区分。
+
+## 9. 组件补全：hubble-relay
+
+层 4（切面）跨两个组件：daemon agent（Hubble server/observer）与 **hubble-relay**（独立二进制，集群级 flow 汇聚）。
+
+| 对象 | 职责 | (VNI,IP) 立场 | 文件 |
+| --- | --- | --- | --- |
+| `relay/server.Server` | 聚合各节点 Hubble，对外 gRPC | ✅ 转发 flow（`vni_id` 透传） | `pkg/hubble/relay/server/server.go` |
+| `healthServer` | relay 健康检查 | ✅ 状态 | `pkg/hubble/relay/server/health.go` |
+
+## 10. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[ip-to-identity](../road/ip-to-identity.md)、[vni-ip-to-identity](../road/vni-ip-to-identity.md)。（专用切面路待补，见 todo P2）
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

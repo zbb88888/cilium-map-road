@@ -150,3 +150,9 @@ flowchart TD
 
 > 策略面**读** identity（VNI label）与 `(VNI, IP)` 身份，**写** mapstate 与 L7 规则；
 > identity 路径天然 VNI 化，CIDR / FQDN / L7 三个边界用 fail-closed 兜底，是「天然 ✅ + 三处边界」。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[ip-to-identity](../road/ip-to-identity.md)、[vni-ip-to-identity](../road/vni-ip-to-identity.md)、[cnp-to-policymap](../road/cnp-to-policymap.md)、[mutual-auth](../road/mutual-auth.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

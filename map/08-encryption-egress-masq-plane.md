@@ -110,3 +110,9 @@ level=fatal msg="native-vpc mode is incompatible with the egress gateway: its po
 
 > 加密/egress/masq 面**读**配置、**写**裸 IP 键的内核态，**无法表达 (VNI, IP)**；
 > 全部由启动拒绝门禁兜底，运行时绝不进入混流路径。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[encryption-egress-rejection](../road/encryption-egress-rejection.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

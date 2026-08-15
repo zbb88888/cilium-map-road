@@ -142,3 +142,9 @@ per-VNI CT 状态。hook 已存在：`bpf/bpf_lxc.c` 的 `select_ct_map4/6()` �
 
 > CT/NAT 面**读/写**裸五元组状态，**无法表达 (VNI, IP)**；
 > 今天靠「调度隔离 + 重叠 IP 指标告警 + NAT 惰性（启动拒绝）」三层缓解，per-VNI CT 是唯一正确修复，hook 已就位。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[fragment-vni-scope](../road/fragment-vni-scope.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

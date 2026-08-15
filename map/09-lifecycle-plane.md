@@ -112,3 +112,9 @@ flowchart TD
 
 > 生命周期面**读**持久化的 VNIID 与 annotation 事实源，**写**恢复/再生状态，
 > 用「序列化 + 重读 + 不跨模式恢复 + 全量升级」保证 VNI 状态在时间轴上收敛。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[endpoint-restore](../road/endpoint-restore.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

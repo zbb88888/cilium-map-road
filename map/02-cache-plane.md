@@ -162,3 +162,9 @@ flowchart TD
 
 > 缓存面**收**控制面写的 `(VNI, IP)` 期望状态，**供**转发面/切面/策略面按 VNI 精确读，
 > 并在 VNI 重叠时对裸 IP 读 fail closed——它是 `(VNI, IP)` 语义最核心的守卫层。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[ip-to-identity](../road/ip-to-identity.md)、[vni-ip-to-identity](../road/vni-ip-to-identity.md)、[cep-vni-propagation](../road/cep-vni-propagation.md)、[endpoint-restore](../road/endpoint-restore.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

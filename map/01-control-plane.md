@@ -181,7 +181,21 @@ flowchart TD
 > 关键：operator 侧两个对象在 native-vpc 下**启动即拒**（`ciliumidentity`、`ciliumendpointslice`），
 > 因为它们无法携带 VNI；其余对象要么是 identity/集群级键（安全），要么是流程/配置类（不受影响）。
 
+**clustermesh-apiserver 组件**（同样属层 1 控制面，独立二进制）：
+
+| 对象 | 职责 | (VNI,IP) 立场 | 文件 |
+| --- | --- | --- | --- |
+| `KVStoreMesh` | 跨集群 kvstore 同步 | ✅ 集群级键 | `pkg/clustermesh/kvstoremesh/kvstoremesh.go` |
+| `clustersHandler` | kvstoremesh API | ✅ 配置/状态 | `pkg/clustermesh/kvstoremesh/api.go` |
+| `clustermesh.Cell` / `kvstoremesh.Cell` | 装配 | ✅ 门禁 | `clustermesh-apiserver/clustermesh`、`kvstoremesh` |
+
 ## 9. 承上启下一句话
 
 > 控制面**读** K8s/CNI/kvstore 的「事实」，**写**缓存面的「共享真相」，
 > 把 `(VNI, IP)` 从一开始就编码进 endpoint 标识、identity label 与 ipcache key。
+
+## 10. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[ip-to-identity](../road/ip-to-identity.md)、[vni-ip-to-identity](../road/vni-ip-to-identity.md)、[cnp-to-policymap](../road/cnp-to-policymap.md)、[cep-vni-propagation](../road/cep-vni-propagation.md)、[service-clusterip-to-backend](../road/service-clusterip-to-backend.md)、[mutual-auth](../road/mutual-auth.md)、[encryption-egress-rejection](../road/encryption-egress-rejection.md)、[endpoint-restore](../road/endpoint-restore.md)、[operator-identity-gc](../road/operator-identity-gc.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

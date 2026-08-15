@@ -139,3 +139,9 @@ flowchart TD
 
 > 转发面**读**缓存面的 `(VNI, IP)` 状态，**写**内核 `cilium_ipcache_vni` 完成 VNI 身份解析；
 > `cilium_lxc` 非权威，权威路径只有一条——VNI map。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[ip-to-identity](../road/ip-to-identity.md)、[vni-ip-to-identity](../road/vni-ip-to-identity.md)、[cnp-to-policymap](../road/cnp-to-policymap.md)、[cep-vni-propagation](../road/cep-vni-propagation.md)、[service-clusterip-to-backend](../road/service-clusterip-to-backend.md)、[fragment-vni-scope](../road/fragment-vni-scope.md)、[mutual-auth](../road/mutual-auth.md)、[endpoint-restore](../road/endpoint-restore.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。

@@ -128,3 +128,9 @@ cilium-dbg monitor --type trace | grep <clusterIP>  # VPC pod 到 ClusterIP 应�
 
 > 服务/LB 面**读** service 期望、**写**裸 IP 的 backend/LB map，**无法表达 (VNI, IP)**；
 > 通过「启动即拒绝 + bpf_lxc 跳过 service 查找」把 LB 完全让渡给 kube-ovn/kube-proxy。
+
+## 9. 互链：对象模型 ↔ 层间概览 ↔ 路
+
+- 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
+- 经过本层的路：[service-clusterip-to-backend](../road/service-clusterip-to-backend.md)。
+- 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
