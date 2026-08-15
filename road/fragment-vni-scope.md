@@ -12,7 +12,7 @@ flowchart TD
     LXC -->|写 frag key{vni=CONFIG}| FRAG[cilium_ipv4_frag_datagrams<br/>LRU map]
     FRAG -.->|读 L4 端口| LXC
     LXC -->|写 分类结果| POL[策略/CT 查找]
-    OTHER[非 bpf_lxc 程序] -.->|写 frag key{vni=0}| FRAG
+    OTHER[非 bpf_lxc 程序] -->|写 frag key{vni=0}| FRAG
     OTHER -.->|读 miss| DROP[DROP_FRAG_NOT_FOUND fail-closed]
 ```
 

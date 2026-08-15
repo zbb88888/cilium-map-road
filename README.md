@@ -41,3 +41,7 @@
 - 十面总览（层边界 + 顶层 CRD→核心对象 + 层间交互图 + 文件梳理）：[`map/00-overview.md`](map/00-overview.md)
 - 完备性三问账本（层/对象/读写边）：[`map/completeness.md`](map/completeness.md)
 - 逐面：`map/01-control-plane.md` … `map/10-assembly-plane.md`
+
+## 巡检
+
+一致性自检（对象数/链接/fence/读写箭头/覆盖矩阵）：`./hack/check.sh`
