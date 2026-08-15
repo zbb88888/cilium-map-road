@@ -37,6 +37,7 @@
 | 10 | [装配面](10-assembly-plane.md) | hive 依赖图 | 门禁 |
 
 全景总览（层间交互图 + 层×组件矩阵 + 文件梳理）见 [00-overview.md](00-overview.md)。
+三轴架构（阶段×特性域×横切）见 [axes.md](axes.md)。
 完备性三问账本见 [completeness.md](completeness.md)；待完善点清单见 [todo.md](todo.md)。
 
 ## 4. 图例约定（读虚写实）

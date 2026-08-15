@@ -1,6 +1,7 @@
 # 第 1 面：控制面（Control Plane）
 
 > 一句话职责：**把外部事实（K8s / CNI / kvstore）翻译成期望状态，驱动 endpoint / identity / IPAM / node / service 配置。**
+> 轴定位：轴1=控制（阶段）；各特性域的控制段均落在此面。
 > 承上启下：承上读外部事实源；启下写缓存面与转发面。
 
 ## 1. 定位（文件）

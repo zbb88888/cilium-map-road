@@ -1,6 +1,7 @@
 # 第 7 面：服务 / 负载均衡面（Service / Load-Balancing Plane）
 
 > 一句话职责：**把 service 前端解析到 backend 集合，并下发 LB map / socket LB 供转发面做负载均衡。**
+> 轴定位：轴2=服务LB（特性域），横跨控制→缓存→转发→观察四段。
 > 承上启下：承上**读**控制面写入的 service/endpoints 期望；启下**写** BPF LB map / socket LB 状态。
 
 ## 1. 定位（文件）
