@@ -23,7 +23,27 @@
 | P2 | [fragment-vni-scope.md](fragment-vni-scope.md) | 分片 VNI 作用域（frag key 加 vni + fail-closed） | ✅ |
 | P3 | [assembly-selfcheck.md](assembly-selfcheck.md) | 装配自检（TestAgentCell → Populate → 门禁） | ✅ |
 | 验证 | [mutual-auth.md](mutual-auth.md) | Mutual Auth（非 VNI 特性的找路验证） | ✅ |
+| 补缺 | [encryption-egress-rejection.md](encryption-egress-rejection.md) | 加密/egress/masq 拒绝（面 8 ❌ 门禁） | ✅ |
+| 补缺 | [endpoint-restore.md](endpoint-restore.md) | endpoint 恢复（VNI 序列化+重读，面 9） | ✅ |
+
+## 覆盖矩阵（路 × 层）
+
+| 路 \ 层 | 1控 | 2缓 | 3转 | 4切 | 5策 | 6CT | 7LB | 8密 | 9命 | 10装 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ip-to-identity | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | |
+| vni-ip-to-identity | ✅ | ✅ | ✅ | ✅ | ✅ | | | | | |
+| cnp-to-policymap | ✅ | | ✅ | | ✅ | | | | | |
+| cep-vni-propagation | ✅ | ✅ | ✅ | | | | | | | |
+| service-clusterip-to-backend | ✅ | | ✅ | | | | ✅ | | | |
+| fragment-vni-scope | | | ✅ | | | ✅ | | | | |
+| assembly-selfcheck | | | | | | | | | | ✅ |
+| mutual-auth | ✅ | | ✅ | | ✅ | | | | | ✅ |
+| encryption-egress-rejection | ✅ | | | | | | | ✅ | | ✅ |
+| endpoint-restore | ✅ | ✅ | ✅ | | | | | | ✅ | |
+| **覆盖计数** | 8 | 4 | 9 | 2 | 5 | 1 | 1 | 1 | 1 | 3 |
+
+> 十面全部有路覆盖。
 
 ## 待找路
 
-> 目前无待找路。新特性到来时，回到 `map/` 找路、回到三问校验、落到 `road/` 存路。
+> 当前无待找路。新特性到来时，回到 `map/` 找路、回到三问校验、落到 `road/` 存路。
