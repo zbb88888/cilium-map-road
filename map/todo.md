@@ -39,9 +39,9 @@
 | 层 | 进度 | 本轮修正 |
 | --- | --- | --- |
 | 1 控制面 | ✅ | Endpoint 不写 IPAM（写者是 endpointRestorer/infra allocator）；Endpoint→IPCache 是经 IPIdentitySynchronizer 链式写；Endpoint 读 IPCache（DNS rules/named ports）；GlobalIdentity 写者= CachingIdentityAllocator（非 labelsfilter 直接写） |
-| 2 缓存面 | ⬜ | |
-| 3 转发面 | ⬜ | |
-| 4 切面 | ⬜ | |
+| 2 缓存面 | ✅ | 边基本准确；澄清：ThreeFourParser 经 `payloadGetters`(EndpointGetter) 读 EndpointManager；policyCache 订阅 IDManager（`idmgr.Subscribe`） |
+| 3 转发面 | ✅ | 补入 `Orchestrator` 对象；修正 Endpoint 不直接写 Loader，而是 Endpoint→Orchestrator→Loader（`e.orchestrator.ReloadDatapath`） |
+| 4 切面 | ✅ | 补入 `LocalObserverServer`（observer）与 `Parser(Decoder)`；修正真实链 MonitorAgent→LocalObserverServer→Parser→ThreeFour/Seven（非 parser 直接读 MonitorAgent）；账本 85 对象 |
 | 5 策略面 | ⬜ | |
 | 6 CT/NAT | ⬜ | |
 | 7 服务/LB | ⬜ | |

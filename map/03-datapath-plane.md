@@ -45,6 +45,10 @@ classDiagram
         +EndpointHash(cfg, lnCfg)
         +WriteEndpointConfig(w, e, lnCfg)
     }
+    class Orchestrator {
+        +ReloadDatapath(ctx, ep, stats)
+        +Reinitialize(ctx, cfg, ...)
+    }
     class Endpoint {
         +Regenerate(regenMetadata)
     }
@@ -58,7 +62,8 @@ classDiagram
     BPFListener ..> IPCache : 读 订阅
     BPFListener --> Key : 写 plain entry（VNI=0）
     BPFListener --> VniKey : 写 VNI entry（VNI≠0）
-    Endpoint --> Loader : 写 触发 ReloadDatapath
+    Endpoint --> Orchestrator : 写 触发 ReloadDatapath
+    Orchestrator --> Loader : 写 调用 ReloadDatapath
     Loader --> bpf_lxc : 写 加载 + native_vpc_vni 配置
     bpf_lxc ..> VniKey : 读 identity 解析
     bpf_lxc ..> EndpointKey : 读 本地 endpoint 元数据（非权威）
@@ -66,6 +71,7 @@ classDiagram
 
 > 图例：实线=写；虚线=读。**打磨修正**：`Loader` 是接口（`pkg/datapath/types/loader.go`，实现 `loader`），
 > 方法为 `ReloadDatapath`（非 `compileAndLoad`）；`bpf_lxc` 是 BPF 程序（`bpf/bpf_lxc.c`），不是 Go 对象。
+> **本轮修正**：Endpoint 不直接写 Loader，而是经 `Orchestrator`（`pkg/datapath/orchestrator`）→ `Loader`；补入 `Orchestrator` 对象。
 > 关键：`cilium_lxc`（`EndpointKey`）按裸 IP 键，**非权威**；VNI 场景的 identity 解析走 `VniKey`。
 
 ## 3. 状态所有权

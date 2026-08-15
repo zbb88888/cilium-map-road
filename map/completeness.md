@@ -27,14 +27,14 @@
 
 ## 问 2：每一层有多少核心对象，是否完备？
 
-**答：共 82 个去重核心对象，按归属层归位。**（层 1 跨 agent/operator/clustermesh，层 4 跨 agent/hubble-relay）
+**答：共 85 个去重核心对象，按归属层归位。**（层 1 跨 agent/operator/clustermesh，层 4 跨 agent/hubble-relay）
 
 | 层 | 核心对象（归属本层） | 计数 |
 | --- | --- | --- |
 | 1 控制面 | agent 侧：K8sWatcher、Endpoint、IPAM、NodeManager、CachingIdentityAllocator、GlobalIdentity、labelsfilter、K8sAPI(外部)（8）；operator 侧：identitygc、ciliumidentity、ciliumendpointslice、endpointgc、endpointslicegc、unmanagedpods、policyderivative、lbipam、nodeipam、gatewayapi、ingress、bgp、cmoperator、endpointslicesync、mcsapi、networkpolicy、secretsync、ztunnel、ciliumenvoyconfig（19）；clustermesh-apiserver 侧：KVStoreMesh、clustersHandler、clustermesh.Cell/kvstoremesh.Cell（3） | 30 |
 | 2 缓存面 | IPCache、Identity、EndpointManager、IDManager、IPIdentitySynchronizer | 5 |
-| 3 转发面 | BPFListener、Loader、bpf_lxc、VniKey、Key、EndpointKey | 6 |
-| 4 切面 | agent 侧：MonitorAgent、ThreeFourParser、SevenParser、EndpointResolver、Flow、ContextOptions（6）；hubble-relay 侧：relay/server.Server、healthServer（2） | 8 |
+| 3 转发面 | BPFListener、Orchestrator、Loader、bpf_lxc、VniKey、Key、EndpointKey | 7 |
+| 4 切面 | agent 侧：MonitorAgent、LocalObserverServer、Parser(Decoder)、ThreeFourParser、SevenParser、EndpointResolver、Flow、ContextOptions（8）；hubble-relay 侧：relay/server.Server、healthServer（2） | 10 |
 | 5 策略面 | PolicyRepository、policyCache、SelectorCache、mapState、FQDNDataServer、DNSProxy、LogRecord | 7 |
 | 6 CT/NAT | TupleKey4、CtKey4Global、NatKey4、CtEntry、GC | 5 |
 | 7 服务/LB | Service、Backend、Writer、BPFOps、Maglev、socketlb | 6 |
@@ -54,7 +54,7 @@
 | 归属层 | 对象 | 读者 | 写者 | 完备性 |
 | --- | --- | --- | --- | --- |
 | 1 | K8sWatcher | K8sAPI | IPCache(2)、NodeManager(1) | ✅ |
-| 1 | Endpoint | IPCache(2)（DNS rules/named ports）、IDManager(2) | EndpointManager(2)（经 AddEndpoint）、IDManager(2)（Add/Remove）、IPCache(2)（经 IPIdentitySynchronizer）、Loader(3)（Regenerate） | ✅ |
+| 1 | Endpoint | IPCache(2)（DNS rules/named ports）、IDManager(2) | EndpointManager(2)（经 AddEndpoint）、IDManager(2)（Add/Remove）、IPCache(2)（经 IPIdentitySynchronizer）、Orchestrator(3)（Regenerate） | ✅ |
 | 1 | IPAM | 控制面查询 | endpointRestorer(9)（restore 分配/释放）、infra allocator/CNI handler（daemon） | ✅ |
 | 1 | NodeManager | 转发面/缓存面 | K8sWatcher | ✅ |
 | 1 | CachingIdentityAllocator | 缓存面查询、策略面 | Endpoint（AllocateIdentity） | ✅ |
@@ -67,11 +67,14 @@
 | 2 | IDManager | Endpoint(1)、策略面 | Endpoint(1) | ✅ |
 | 2 | IPIdentitySynchronizer | kvstore | IPCache | ✅ |
 | 3 | BPFListener | IPCache(2) | Key、VniKey | ✅ |
+| 3 | Orchestrator | — | Loader（调用 ReloadDatapath） | ✅ |
 | 3 | Loader | — | bpf_lxc（加载） | ✅ |
 | 3 | bpf_lxc | VniKey、EndpointKey、CtKey(6)、NatKey(6)、LBMaps(7)、EgressMap(8)、EncryptMap(8) | CtKey(6)、NatKey(6)、policymap(5) | ✅ |
 | 3 | VniKey/Key/EndpointKey | bpf_lxc | BPFListener/Endpoint | ✅（键类型） |
-| 4 | MonitorAgent | ThreeFourParser | 转发面（事件） | ✅ |
-| 4 | ThreeFourParser | MonitorAgent、EndpointManager(2) | Flow | ✅ |
+| 4 | MonitorAgent | LocalObserverServer（订阅） | 转发面（事件） | ✅ |
+| 4 | LocalObserverServer | MonitorAgent | Parser(Decoder)（调 Decode） | ✅ |
+| 4 | Parser(Decoder) | LocalObserverServer（被调） | ThreeFourParser、SevenParser（分派） | ✅ |
+| 4 | ThreeFourParser | EndpointManager(2)（经 EndpointGetter） | Flow | ✅ |
 | 4 | SevenParser | LogRecord(5) | Flow | ✅ |
 | 4 | EndpointResolver | IPCache(2) | — | ✅ |
 | 4 | Flow | ContextOptions、exporter | ThreeFourParser、SevenParser | ✅ |
@@ -113,5 +116,5 @@
 | 1 | KVStoreMesh | 本地 kvstore、远程 client | 本地 kvstore 镜像 | ✅（集群级键透传） |
 | 4 | relay/server.Server | 各节点 Hubble flow | gRPC 导出 | ✅（vni_id 透传） |
 
-> 结论：82 个对象无孤儿、无悬空状态，读虚写实边全部对齐。
+> 结论：85 个对象无孤儿、无悬空状态，读虚写实边全部对齐。
 > 新增对象时，必须先回答：它属于哪一层、读谁、写谁——三问缺一不可入图。

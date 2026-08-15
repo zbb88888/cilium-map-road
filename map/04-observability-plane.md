@@ -26,6 +26,13 @@ classDiagram
     class MonitorAgent {
         +Subscribe() / SendEvent()
     }
+    class LocalObserverServer {
+        +GetEventsChannel()
+        +Run()
+    }
+    class Parser {
+        +Decode(monitorEvent)
+    }
     class ThreeFourParser {
         +DecodeTraceNotify()
     }
@@ -55,7 +62,10 @@ classDiagram
         +GetLabelValues(flow)
     }
 
-    ThreeFourParser ..> MonitorAgent : 读 datapath 事件
+    LocalObserverServer ..> MonitorAgent : 读 订阅事件
+    LocalObserverServer --> Parser : 写 调 Decode
+    Parser --> ThreeFourParser : 写 分派
+    Parser --> SevenParser : 写 分派
     ThreeFourParser ..> EndpointManager : 读 local endpoint VNI
     EndpointResolver ..> IPCache : 读 VNI-scoped 身份/元数据
     SevenParser ..> LogRecord : 读 L7 记录（VNIID）
@@ -68,6 +78,8 @@ classDiagram
 > 图例：实线=写；虚线=读。**打磨修正**：`MonitorAgent` 实际是接口 `monitor/agent.Agent`；
 > `ThreeFourParser`/`SevenParser` 实际类型分别是 `threefour.Parser`/`seven.Parser`（同名不同包，故用前缀区分）；
 > `Flow` 是 `api/v1/flow` 生成类型；`ContextOptions` 是 `pkg/hubble/metrics/api` 的类型。
+> **本轮修正**：补入 `LocalObserverServer`（`pkg/hubble/observer`）与 `Parser`(Decoder)（`pkg/hubble/parser`）；
+> 真实链是 MonitorAgent → LocalObserverServer → Parser(Decoder) → ThreeFour/SevenParser（不是 parser 直接读 MonitorAgent）。
 > 切面对业务状态是**纯读者**，唯一的「写」是写自己的导出产物。
 
 ## 3. 状态所有权
