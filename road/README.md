@@ -23,6 +23,7 @@
 | P2 | [fragment-vni-scope.md](fragment-vni-scope.md) | 分片 VNI 作用域（frag key 加 vni + fail-closed） | ✅ |
 | P3 | [assembly-selfcheck.md](assembly-selfcheck.md) | 装配自检（TestAgentCell → Populate → 门禁） | ✅ |
 | 验证 | [mutual-auth.md](mutual-auth.md) | Mutual Auth（非 VNI 特性的找路验证） | ✅ |
+| 边界 | [fqdn-cidr-identity.md](fqdn-cidr-identity.md) | FQDN/CIDR 身份（裸前缀基线 + VNI 缺口） | ✅ |
 | 补缺 | [encryption-egress-rejection.md](encryption-egress-rejection.md) | 加密/egress/masq 拒绝（面 8 ❌ 门禁） | ✅ |
 | 补缺 | [endpoint-restore.md](endpoint-restore.md) | endpoint 恢复（VNI 序列化+重读，面 9） | ✅ |
 | 组件 | [operator-identity-gc.md](operator-identity-gc.md) | operator identity GC（组件首条路，identity 键安全） | ✅ |
@@ -45,7 +46,8 @@
 | endpoint-restore | ✅ | ✅ | ✅ | | | | | | ✅ | |
 | operator-identity-gc | ✅ | | | | | | | | | |
 | observability-pipeline | | | | ✅ | | | | | | |
-| **覆盖计数** | 9 | 4 | 8 | 3 | 4 | 1 | 1 | 1 | 1 | 3 |
+| fqdn-cidr-identity | ✅ | ✅ | ✅ | | ✅ | | | | | |
+| **覆盖计数** | 10 | 5 | 9 | 3 | 5 | 1 | 1 | 1 | 1 | 3 |
 
 > 十面全部有路覆盖。**组件维度**见下方「路 × 组件」矩阵。
 
@@ -66,7 +68,8 @@
 | operator-identity-gc | | ✅ | | |
 | observability-pipeline | ✅ | | | ✅ |
 | clustermesh-kvstoremesh | | | ✅ | |
-| **覆盖计数** | 11 | 2 | 1 | 1 |
+| fqdn-cidr-identity | ✅ | | | |
+| **覆盖计数** | 12 | 2 | 1 | 1 |
 
 > 四个组件全部有路覆盖。
 
