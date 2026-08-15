@@ -148,3 +148,11 @@ per-VNI CT 状态。hook 已存在：`bpf/bpf_lxc.c` 的 `select_ct_map4/6()` �
 - 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
 - 经过本层的路：[fragment-vni-scope](../road/fragment-vni-scope.md)。
 - 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
+
+## 10. review 结论（完备性 / 正确性 / 兼容性）
+
+- **完备性** ✅：对象 `TupleKey4/CtKey4Global/NatKey4/CtEntry/GC` 读者/写者已入账；`GC` 读/删 CtEntry、`bpf_lxc` 读/写 ct/nat key，无孤儿无悬空。
+- **正确性** ❌（已知）：`struct ipv4_ct_tuple = {daddr,saddr,dport,sport,nexthdr,flags}` 裸五元组无 VNI；`select_ct_map4/6` 只支持 `cluster_id`（ClusterMesh `ARRAY_OF_MAPS`），不支持 VNI（修复需 `HASH_OF_MAPS`）。
+- **正确性（部分 VNI）** ✅：分片 map `ipv4_frag_id` 加 `vni`（仅 bpf_lxc），跨程序 fail-closed（`DROP_FRAG_NOT_FOUND`）。
+- **兼容性** ✅：NAT 惰性（BPF masq/KPR/socketLB 启动即拒）；运行时检测 `cilium_native_vpc_overlapping_ips` 告警；调度隔离（重叠 IP 不共节点）消除碰撞。
+- **风险**：`select_ct_map` 的 per-VNI 修复会动 CT/NAT/DSR/service 共享 key 布局，不建议加 VNI 字段；应走 `HASH_OF_MAPS` outer map（hook 已就位）。

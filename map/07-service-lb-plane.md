@@ -135,3 +135,11 @@ cilium-dbg monitor --type trace | grep <clusterIP>  # VPC pod 到 ClusterIP 应�
 - 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
 - 经过本层的路：[service-clusterip-to-backend](../road/service-clusterip-to-backend.md)。
 - 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
+
+## 10. review 结论（完备性 / 正确性 / 兼容性）
+
+- **完备性** ✅：对象 `Service/Backend/Writer/BPFOps/Maglev/socketlb` 读者/写者已入账；`Writer` 读 Service/Backend，`BPFOps` 读 Maglev 写 LBMaps，`socketlb` 读 Backend，无孤儿。
+- **正确性** ❌（已知）：backend 键裸 `(IP,port,proto)`，两 VPC 同 IP 塌缩成一条 backend。
+- **正确性（数据面绕过）** ✅：`bpf/bpf_lxc.c` `if (CONFIG(native_vpc_vni) > 0) goto skip_service_lookup;`（IPv4/IPv6 双路径），VPC endpoint 永不翻译 service 地址。
+- **兼容性** ✅：KPR/socketLB 启动即拒；LB 控制面仍无条件注册/反射 ClusterIP，但因数据面跳过而惰性；`CiliumLocalRedirectPolicy` 不受门控但无效且不安全（文档化）。
+- **风险**：新增 LB 特性若漏加启动拒绝门控，裸 IP backend 碰撞会重新引入跨租户重定向。
