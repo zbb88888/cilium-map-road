@@ -70,3 +70,9 @@ flowchart TD
 
 这条路把「FQDN/CIDR 策略」从 DNS 应答一路追到 identity 分配与 BPF 下发，暴露了策略面最大的 VNI 边界：
 **identity 路径天然 VNI 化，CIDR/FQDN 路径裸前缀**。当前结论：有条件需要、优先级低，先规范化替代 + 护栏，完整版拆 PR。
+
+## 8. review 结论（策略面）
+
+- ✅ 写路径 VNI 化正确：`podVNI()`/`ciliumEndpointVNI()` → `KeyWithVNI`，删除用旧 VNI（不泄漏）；CEP 无 VNI 时 fail-closed 跳过注册。
+- ✅ 读路径 fail-closed 正确：`LookupSecIDByIP`（裸）不命中 `ip@vni:N`；`LookupSecIDByIPUnambiguous`/`GetK8sMetadataForVNI` 才是 VNI 精确读；`LookupByIdentity` 用 `splitVNIKey` 剥后缀，不泄漏裸 key。
+- ⚠️ 唯一边界：CIDR/FQDN 身份仍裸前缀（本路主题），策略无法区分跨 VPC 同 IP；建议规范化替代 + 护栏。
