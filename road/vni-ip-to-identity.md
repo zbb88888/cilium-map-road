@@ -66,3 +66,24 @@ flowchart TD
 | 3 转发面 | `BPFListener`、`VniKey`、`bpf_lxc` | `pkg/datapath/ipcache/listener.go`、`pkg/maps/ipcache/ipcache.go`、`bpf/lib/eps.h`、`bpf/bpf_lxc.c` |
 | 4 切面 | `EndpointResolver`、`Flow`、`LogRecord` | `pkg/hubble/parser/common/endpoint.go`、`api/v1/flow/flow.proto`、`pkg/proxy/accesslog/record.go` |
 | 5 策略面 | `GlobalIdentity`（VNI label） | `pkg/labels/labels.go`、`pkg/identity/key/global_identity.go`、`pkg/labelsfilter/filter.go` |
+
+## 6. 三轴重走 + PR 验证（正确性 / 完备性 / 兼容性）
+
+> 用三轴（阶段×特性域×横切）重走这条路。特性域 = **身份/认证**（主链）；横切 = 装配 + 生命周期 + 状态存储。
+
+| 阶段（轴1） | 对象（身份域） | 正确性 | 完备性 | 兼容性 |
+| --- | --- | --- | --- | --- |
+| 控制 | `Endpoint.VNIID`、`K8sWatcher`、`GlobalIdentity`、`labelsfilter` | ✅ `nativevpc.VNIFromPod` 统一决策表；annotation→VNIID；删除用旧 VNI | ✅ VNI 进 endpoint 标识 + identity label + CEP annotation | ✅ CEP annotation 跨版本（老 agent 忽略未知 annotation） |
+| 缓存 | `IPCache.KeyWithVNI`、`ipToVNIKeys`、`EndpointManager` | ✅ `ip@vni:N` key；`ForVNI` key-exact；`Unambiguous` fail-closed | ✅ `ipToVNIKeys` 反查 + `LookupIPWithVNI/AnyVNI` | ✅ kvstore `IPIdentityPair.Vni`（老 agent 拒绝，需全量升级） |
+| 转发 | `BPFListener`、`VniKey`、`cilium_ipcache_vni`、`bpf_lxc` | ✅ `Vni≠0`→vni map；`VniKey` 与 C 结构布局对齐；`bpf_lxc` VNI 查找 | ✅ 权威 VNI map + `cilium_lxc` 非权威 | ✅ frag key 加 vni（仅 bpf_lxc）fail-closed；`bpf_lxc` 跳过 service 查找 |
+| 观察 | `EndpointResolver`、`Flow.vni_id` | ✅ VNI-first 富化（`GetK8sMetadataForVNI`）后 bare-IP fallback | ✅ `Flow.Endpoint.vni_id` 透传 + metrics vni 标签 | ✅ protobuf field 9 向后兼容 |
+
+横切（轴3）验证：
+
+| 横切 | 正确性 / 完备性 / 兼容性 |
+| --- | --- |
+| 装配 | ✅ `TestAgentCellNativeVPC` 双模式 Populate；VNI-aware 接口编译期断言 |
+| 生命周期 | ✅ VNIID 序列化 + 重读 + 不跨模式恢复；升级全量先行、降级安全 |
+| 状态存储 | ✅ kvstore `ip@vni:N` + CEP VNI annotation 双通道持久化；restore 重建 VNI map |
+
+**结论**：VNI+IP→identity 这条路在**三轴下正确、完备、兼容**；除已文档化的三个 ❌ 面（CT/NAT、服务LB、加密egress）与一个策略面边界（FQDN/CIDR 裸前缀），无新增问题。
