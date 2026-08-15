@@ -116,3 +116,10 @@ level=fatal msg="native-vpc mode is incompatible with the egress gateway: its po
 - 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
 - 经过本层的路：[encryption-egress-rejection](../road/encryption-egress-rejection.md)。
 - 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
+
+## 10. review 结论（完备性 / 正确性 / 兼容性）
+
+- **完备性** ✅：对象 `WireGuardAgent/IPSecAgent/EgressManager/IPMasqAgent` 读者/写者已入账，无孤儿无悬空。
+- **正确性** ❌（已知）：全部按裸 IP/裸 CIDR 选流量或选 peer——egress 按 pod 源 IP、IPsec/WG 按 node/endpoint IP 选 peer、ipmasq 按 CIDR、SRv6 按源 IP→VRF、VTEP 按 CIDR。
+- **兼容性** ✅：`nativeVPCDatapathCompatibility` 启动即拒 5 类（egress/SRv6/VTEP/BPF masq/IPsec+WG）；bandwidth manager（endpoint id 键）与 policy map（identity 键）确认不受影响。
+- **风险**：新增「按裸 IP 选流量/peer」的特性若漏加启动拒绝门控，会静默混流；门控的回归测试在 `daemon/cmd/native_vpc_validation_test.go`。

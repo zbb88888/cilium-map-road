@@ -126,3 +126,10 @@ flowchart TD
 - 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
 - 经过本层的路：[assembly-selfcheck](../road/assembly-selfcheck.md)、[mutual-auth](../road/mutual-auth.md)、[encryption-egress-rejection](../road/encryption-egress-rejection.md)。
 - 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
+
+## 10. review 结论（完备性 / 正确性 / 兼容性）
+
+- **完备性** ✅：对象 `Hive/Cell/Module/Agent/TestAgentCell/TestAgentCellNativeVPC` 读者/写者已入账。
+- **正确性** ✅：`TestAgentCell` + `TestAgentCellNativeVPC` 双模式 `Populate()` 验证整图可实例化；VNI-aware 接口编译期断言防静默退化；裸 IP 键特性启动拒绝有回归测试。
+- **兼容性** ✅：三个失败模式（缺失类型 / 可选接口降级 / 条件门控跳过）各有门禁；native-vpc 新增 provider/consumer 由 `TestAgentCellNativeVPC` 覆盖。
+- **风险**：新增 cell/对象时必须同时维护双模式 Populate 测试与三问校验，否则缺失类型/降级回归。

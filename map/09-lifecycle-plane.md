@@ -118,3 +118,10 @@ flowchart TD
 - 本层对象模型见 §2，层间概览见 §5；层边界与顶层 API 见 [00-overview.md](00-overview.md)。
 - 经过本层的路：[endpoint-restore](../road/endpoint-restore.md)。
 - 完备性账本见 [completeness.md](completeness.md)，待完善点见 [todo.md](todo.md)。
+
+## 10. review 结论（完备性 / 正确性 / 兼容性）
+
+- **完备性** ✅：对象 `endpointRestorer/LocalIdentityRestorer/Regenerator/dynamiclifecycle/Manager` 读者/写者已入账，无孤儿。
+- **正确性** ✅：VNIID 随序列化 endpoint 存活；`SyncVNIFromPodAnnotation` 用统一决策表 `nativevpc.VNIFromPod` 重读；`LocalIdentityRestorer.RestoreLocalIdentities` 重建 VNI-scoped ipcache；关闭模式不恢复 VNIID（避免半配置）。
+- **兼容性** ✅：升级全量先行（老 agent 拒绝 `IPIdentityPair.Vni`）；降级安全（未知 annotation/JSON 字段忽略）；修复走「重启 kube-ovn-controller → 重启 Cilium」重读。
+- **风险**：运行中 VNI 变更不热应用（故意），运维须按文档流程走，否则 VNI 状态与 annotation 不一致。
