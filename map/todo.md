@@ -48,3 +48,12 @@
 | 8 加密/egress/masq | ✅ | EgressManager 读 Endpoint(Identity/labels) 非 source IP；其余准确 |
 | 9 生命周期 | ✅ | 边准确（endpointRestorer/LocalIdentityRestorer/Regenerator/dynamiclifecycle/Manager） |
 | 10 装配 | ✅ | 边准确（Hive/Cell/Module/Agent + TestAgentCell 门禁） |
+
+## 里程碑巡检报告（v1.0）
+
+- [x] 对象数一致：问2 求和 = 85 = 问3 结论（无 58/77/82/83 残留）
+- [x] 链接：map/road/README 全部无 broken link
+- [x] mermaid：所有文档 fence 平衡
+- [x] 读写箭头：无「实线标读 / 虚线标写」违例
+- [x] 覆盖矩阵：层 9+4+8+3+4+1+1+1+1+3=35；组件 11+2+1+1=15；已有路 13 条
+- [x] 旧对象名残留：仅存在于「打磨修正」说明（有意保留的改名历史），无实际误用
