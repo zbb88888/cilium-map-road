@@ -159,7 +159,29 @@ flowchart TD
 - **风险 2**：operator 侧控制面（集群级 GC/控制器）同样写缓存面，
   但读写链跨进程，VNI 语义靠 CEP annotation 传播，需在缓存面/装配面交叉核对。
 
-## 8. 承上启下一句话
+## 8. 组件补全：operator / clustermesh 侧控制面对象
+
+> 层 1（控制面）跨三个组件：daemon agent、operator、clustermesh-apiserver。前面对象模型只列了 agent 侧，这里补 operator/clustermesh 侧（它们也是层 1 的核心对象）。
+
+| 对象 | 职责 | (VNI,IP) 立场 | 文件 |
+| --- | --- | --- | --- |
+| `identitygc.GC` | identity 垃圾回收（按 usage，不重算 labels） | ✅ 安全（identity 键，不碰裸 IP） | `operator/identitygc/gc.go` |
+| `ciliumidentity` 控制器 | 管理 CiliumIdentity CRD | ❌ 启动即拒（从 pod/ns labels 派生 identity，不知 VNI annotation） | `operator/pkg/ciliumidentity` |
+| `ciliumendpointslice` 控制器 | 管理 CES | ❌ 启动即拒（`CoreCiliumEndpoint` 无法携带 VNI） | `operator/pkg/ciliumendpointslice` |
+| `endpointgc.GC` | 回收泄漏的 CiliumEndpoint | ✅ 安全（CEP 带 VNI annotation） | `operator/endpointgc/gc.go` |
+| `endpointslicegc` | CES 特性关闭时一次性 GC | ✅ 流程性 | `operator/endpointslicegc` |
+| `unmanagedpods` | 重启无 CEP 的 pod | ✅ 流程性 | `operator/unmanagedpods` |
+| `policyderivative` | CNP/CCNP 派生策略 | ✅ 经 identity | `operator/policyderivative` |
+| `lbipam` / `nodeipam` | LB / Node IPAM | ✅ 集群级（非 pod 裸 IP） | `operator/pkg/lbipam`、`operator/pkg/nodeipam` |
+| `gatewayapi` / `ingress` | Gateway API / Ingress 控制器 | ✅ 前端/配置（非 pod 裸 IP） | `operator/pkg/gateway-api`、`operator/pkg/ingress` |
+| `bgp` | BGP 控制面 | ✅ 节点/peer（非 pod 裸 IP） | `operator/pkg/bgp` |
+| `cmoperator` / `endpointslicesync` / `mcsapi` / `networkpolicy` | 多集群服务/策略同步 | ✅ 集群级 | `operator/pkg` |
+| `secretsync` / `ztunnel` / `ciliumenvoyconfig` | TLS 同步 / zTunnel / CEC | ✅ 配置类 | `operator/pkg/secretsync`、`operator/pkg/ztunnel` |
+
+> 关键：operator 侧两个对象在 native-vpc 下**启动即拒**（`ciliumidentity`、`ciliumendpointslice`），
+> 因为它们无法携带 VNI；其余对象要么是 identity/集群级键（安全），要么是流程/配置类（不受影响）。
+
+## 9. 承上启下一句话
 
 > 控制面**读** K8s/CNI/kvstore 的「事实」，**写**缓存面的「共享真相」，
 > 把 `(VNI, IP)` 从一开始就编码进 endpoint 标识、identity label 与 ipcache key。

@@ -27,11 +27,11 @@
 
 ## 问 2：每一层有多少核心对象，是否完备？
 
-**答：共 58 个去重核心对象，按归属层归位。**
+**答：共 77 个去重核心对象，按归属层归位。**（层 1 控制面跨 agent/operator/clustermesh 三个组件）
 
 | 层 | 核心对象（归属本层） | 计数 |
 | --- | --- | --- |
-| 1 控制面 | K8sWatcher、Endpoint、IPAM、NodeManager、CachingIdentityAllocator、GlobalIdentity、labelsfilter、K8sAPI(外部) | 8 |
+| 1 控制面 | agent 侧：K8sWatcher、Endpoint、IPAM、NodeManager、CachingIdentityAllocator、GlobalIdentity、labelsfilter、K8sAPI(外部)（8）；operator/clustermesh 侧：identitygc、ciliumidentity、ciliumendpointslice、endpointgc、endpointslicegc、unmanagedpods、policyderivative、lbipam、nodeipam、gatewayapi、ingress、bgp、cmoperator、endpointslicesync、mcsapi、networkpolicy、secretsync、ztunnel、ciliumenvoyconfig（19，见 map/01 §8） | 27 |
 | 2 缓存面 | IPCache、Identity、EndpointManager、IDManager、IPIdentitySynchronizer | 5 |
 | 3 转发面 | BPFListener、Loader、bpf_lxc、VniKey、Key、EndpointKey | 6 |
 | 4 切面 | MonitorAgent、ThreeFourParser、SevenParser、EndpointResolver、Flow、ContextOptions | 6 |
@@ -101,5 +101,7 @@
 | 10 | Hive/Cell/Module/Agent | TestAgentCell* | cell（provide） | ✅（装配） |
 | 10 | TestAgentCell / TestAgentCellNativeVPC | Hive（校验） | — | ✅（门禁） |
 
-> 结论：58 个对象无孤儿、无悬空状态，读虚写实边全部对齐。
+> 结论：77 个对象无孤儿、无悬空状态，读虚写实边全部对齐。
+> operator/clustermesh 侧对象的读者/写者粗粒度：读 K8s CRD/kvstore，写 CiliumIdentity/CES/CEP/心跳或对应集群级配置；
+> 其中 `ciliumidentity`、`ciliumendpointslice` 在 native-vpc 下启动即拒（无法携带 VNI），见 `map/01-control-plane.md` §8。
 > 新增对象时，必须先回答：它属于哪一层、读谁、写谁——三问缺一不可入图。
