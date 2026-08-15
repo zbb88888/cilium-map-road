@@ -1,7 +1,7 @@
 # 十面总览 + 文件梳理
 
 > 基线：`/root/7/cilium`。文件梳理只标注**归属面**，跨层对象在归属面正文里说明。
-> 每面的完整分析见 `docs/planes/`。
+> 每面的完整分析见 `map/01~10`。
 
 ## 1. 层间交互概要图
 
@@ -50,7 +50,41 @@ flowchart TD
 
 > 图例：实线=写（写者→被写对象）；虚线=读（读者→数据源）；`装配` 是依赖注入关系，非业务读写。
 
-## 2. 十面文件梳理
+## 2. 层边界确认（内聚性 + 组件）
+
+层 = 一块内聚的业务状态域 + 读写它的对象。**谁写状态，谁就是归属层**；组件（hive cell / 进程）只是装配容器，不决定边界。
+
+| 面 | 内聚状态域（谁写） | 主要组件 | 边界判定 |
+| --- | --- | --- | --- |
+| 1 控制面 | endpoint 生命周期 / identity / IPAM / node / service 期望（`Endpoint`/`K8sWatcher`/`IPAM`/`NodeManager` 写） | daemon agent、operator、clustermesh-apiserver | 翻译外部事实，不拥有缓存/内核态 |
+| 2 缓存面 | 内存共享真相（`IPCache`/`EndpointManager`/`IDManager` 持有） | daemon agent | 主写者在外（控制面），自身只维护索引+通知 |
+| 3 转发面 | 内核运行时（`BPFListener`/`Loader`/BPF 写） | daemon agent（bpf 程序） | 只执行，不做业务决策 |
+| 4 切面 | 导出产物（`Parser`/`EndpointResolver`/`ContextOptions` 写） | daemon agent、hubble-relay | 纯读者，写自己的 flow/metrics/log |
+| 5 策略面 | 规则/selector/mapstate/L7 规则（`PolicyRepository`/`policyCache`/`DNSProxy` 写） | daemon agent、operator(policyderivative) | 经 identity 语义，不碰 IP key |
+| 6 CT/NAT | 五元组连接状态（`GC`/BPF 写 ct/nat map） | daemon agent | 裸五元组，无 VNI |
+| 7 服务/LB | service→backend（`Writer`/`BPFOps` 写） | daemon agent、operator(lbipam/bgp) | backend 裸 IP，无 VNI |
+| 8 加密/egress/masq | 加密态/egress/ipmasq（`wireguard.Agent`/`ipsec.Agent`/`egressgateway.Manager`/`IPMasqAgent` 写） | daemon agent | 地址键，无 VNI |
+| 9 生命周期 | 状态迁移（`endpointRestorer`/`LocalIdentityRestorer`/`Regenerator` 写） | daemon agent、operator | 流程性，不长期拥有业务状态 |
+| 10 装配 | 依赖图本身（`hive`/`cell` 装配） | 所有进程 | 组件视图的代码化 |
+
+## 3. 顶层 API（CRD）→ 各层核心对象（从上到下）
+
+Cilium 的顶层接口是 **Kubernetes CRD + CNI + kvstore + daemon REST API**。按「一条对象从 CRD 进来，落到哪个层的哪个对象」梳理核心对象：
+
+| 顶层 API 入口 | 控制面对象 | 缓存面对象 | 策略面对象 | 转发面/执行对象 | 切面对象 |
+| --- | --- | --- | --- | --- | --- |
+| Pod/CEP（`ovn.kubernetes.io/tunnel_key` VNI annotation） | `K8sWatcher`、`Endpoint` | `IPCache`、`EndpointManager` | — | `BPFListener`、`VniKey`、`cilium_ipcache_vni` | `EndpointResolver`、`Flow.vni_id` |
+| CN/CID/CES | `K8sWatcher`、`CachingIdentityAllocator` | `IDManager` | `GlobalIdentity`（VNI label） | `policymap`（identity 键） | — |
+| CNP/CCNP | `policy/k8s watcher` | `PolicyRepository`、`SelectorCache` | `policyCache`、`mapState` | `policymap` | — |
+| Service/Endpoints | `K8sWatcher` | — | — | `Writer`、`BPFOps`、`cilium_lb*` | `ContextOptions`（vni 标签，仅前端） |
+| CiliumEnvoyConfig / Ingress / GatewayAPI | `ciliumenvoyconfig`、`envoy` | — | `DNSProxy`/Envoy | — | `LogRecord.VNIID` |
+| CiliumEgressGatewayPolicy / IPsec/WG 配置 | `egressgateway.Manager`、`wireguard.Agent`、`ipsec.Agent` | — | — | egress/ipmasq/xfrm/WG peer | — |
+| CNI ADD/DEL | `Endpoint`、`IPAM` | `IPCache`、`EndpointManager` | — | `Loader`、`bpf_lxc` | — |
+| kvstore（identity/ipcache/service） | `IPIdentitySynchronizer` | `IPCache`（`ip@vni:N`） | — | `BPFListener` | — |
+
+> 这就是「地图」的主干：每个 CRD 入口都是一条路的起点，沿控制面→缓存面→策略面→转发面→切面逐层落地。
+
+## 4. 十面文件梳理
 
 ### 1. 控制面
 
@@ -176,7 +210,7 @@ flowchart TD
 | `pkg/datapath/cells.go` 及各包 `cell.go` | 子模块装配 |
 | `clustermesh-apiserver/` | clustermesh 装配 |
 
-## 3. 层 × 组件 矩阵（层与组件正交）
+## 5. 层 × 组件 矩阵（层与组件正交）
 
 | 面 | daemon agent | operator | clustermesh-apiserver | hubble-relay |
 | --- | --- | --- | --- | --- |
