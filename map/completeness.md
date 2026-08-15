@@ -81,7 +81,7 @@
 | 4 | ContextOptions | Flow | Prometheus | ✅ |
 | 5 | PolicyRepository | policyCache | 控制面 watcher | ✅ |
 | 5 | policyCache | PolicyRepository、SelectorCache | mapState | ✅ |
-| 5 | SelectorCache | GlobalIdentity(1) | — | ✅ |
+| 5 | SelectorCache | identity cache(1)（identity allocator 提供） | — | ✅ |
 | 5 | mapState | 转发面（policymap 下发） | policyCache | ✅ |
 | 5 | FQDNDataServer | EndpointManager(2)、IPCache(2) | — | ✅ |
 | 5 | DNSProxy | EndpointManager(2)、IPCache(2) | LogRecord | ✅ |
@@ -89,12 +89,13 @@
 | 6 | GC | CtEntry（扫描） | CtEntry（删除过期） | ✅ |
 | 6 | TupleKey4/CtKey4Global/NatKey4/CtEntry | bpf_lxc(3)、GC | bpf_lxc(3) | ✅（键/值类型） |
 | 7 | Writer | Service、Backend | — | ✅ |
-| 7 | BPFOps | — | Maglev、LBMaps | ✅ |
+| 7 | BPFOps | Maglev（GetLookupTable） | LBMaps | ✅ |
 | 7 | socketlb | Backend | — | ✅ |
-| 7 | Service/Backend/Maglev | Writer、socketlb、bpf_lxc(3) | BPFOps | ✅（值类型） |
+| 7 | Service/Backend | Writer、socketlb、bpf_lxc(3) | K8sWatcher（service/endpoints watcher，经 stateDB） | ✅（值类型） |
+| 7 | Maglev | BPFOps（GetLookupTable） | —（纯计算） | ✅ |
 | 8 | WireGuardAgent | NodeIP | — | ✅ |
 | 8 | IPSecAgent | — | xfrm | ✅ |
-| 8 | EgressManager | Endpoint(1)（source IP） | EgressMap | ✅ |
+| 8 | EgressManager | Endpoint(1)（Identity/labels/epDataStore） | EgressMap（policyMap4/6） | ✅ |
 | 8 | IPMasqAgent | — | IPMasqMap | ✅ |
 | 9 | endpointRestorer | Endpoint(1)、K8sAnnotation | Endpoint(1)（重建） | ✅ |
 | 9 | LocalIdentityRestorer | — | IPCache(2)（重建） | ✅ |

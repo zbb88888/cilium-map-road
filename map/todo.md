@@ -42,9 +42,9 @@
 | 2 缓存面 | ✅ | 边基本准确；澄清：ThreeFourParser 经 `payloadGetters`(EndpointGetter) 读 EndpointManager；policyCache 订阅 IDManager（`idmgr.Subscribe`） |
 | 3 转发面 | ✅ | 补入 `Orchestrator` 对象；修正 Endpoint 不直接写 Loader，而是 Endpoint→Orchestrator→Loader（`e.orchestrator.ReloadDatapath`） |
 | 4 切面 | ✅ | 补入 `LocalObserverServer`（observer）与 `Parser(Decoder)`；修正真实链 MonitorAgent→LocalObserverServer→Parser→ThreeFour/Seven（非 parser 直接读 MonitorAgent）；账本 85 对象 |
-| 5 策略面 | ⬜ | |
-| 6 CT/NAT | ⬜ | |
-| 7 服务/LB | ⬜ | |
-| 8 加密/egress/masq | ⬜ | |
-| 9 生命周期 | ⬜ | |
-| 10 装配 | ⬜ | |
+| 5 策略面 | ✅ | SelectorCache 读 identity cache(1)（非 GlobalIdentity 直接）；其余边准确 |
+| 6 CT/NAT | ✅ | 边准确（GC 扫描+删除 CtEntry，bpf_lxc 读/写 ct/nat key） |
+| 7 服务/LB | ✅ | 修正 BPFOps 是读 Maglev（GetLookupTable）非写；Maglev 纯计算；Service/Backend 写者= K8sWatcher（经 stateDB） |
+| 8 加密/egress/masq | ✅ | EgressManager 读 Endpoint(Identity/labels) 非 source IP；其余准确 |
+| 9 生命周期 | ✅ | 边准确（endpointRestorer/LocalIdentityRestorer/Regenerator/dynamiclifecycle/Manager） |
+| 10 装配 | ✅ | 边准确（Hive/Cell/Module/Agent + TestAgentCell 门禁） |

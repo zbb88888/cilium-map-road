@@ -48,7 +48,7 @@ classDiagram
 
     Writer ..> Service : 读 前端
     Writer ..> Backend : 读 后端集合
-    BPFOps --> Maglev : 写 一致性哈希表
+    BPFOps ..> Maglev : 读 GetLookupTable
     BPFOps --> LBMaps : 写 BPF LB map
     socketlb ..> Backend : 读 后端
     bpf_lxc ..> LBMaps : 读 service 查找（VNI=0 时）
@@ -56,6 +56,7 @@ classDiagram
 
 > 图例：实线=写；虚线=读。**打磨修正**：`LBWriter` 拆成 `Writer`（选 backend）+ `BPFOps`（写 BPF map）；
 > `SocketLB`→`socketlb`（包，函数 `Enable`）；`BPFLXC`→`bpf_lxc`。**backend key = (IP, port, protocol)，地址是裸 IP，无 VNI。**
+> **本轮修正**：`BPFOps` 是**读** `Maglev.GetLookupTable`（不是写 Maglev）；Maglev 是纯计算对象；Service/Backend 的写者是 K8sWatcher（经 stateDB）。
 
 ## 3. 状态所有权
 
