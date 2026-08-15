@@ -27,29 +27,35 @@ classDiagram
     class Backend {
         +IP +Port +Protocol
     }
-    class LBWriter {
-        +UpsertService / UpsertBackend
+    class Writer {
+        +SelectBackends(txn, bes, svc, fe)
+        +BackendsForService(txn, name)
+    }
+    class BPFOps {
+        +Update(ctx, txn, rev, fe)
+        +upsertService / upsertBackend
     }
     class Maglev {
-        +Table(backends)
+        +New(cfg, lc)
     }
-    class SocketLB {
-        +socket 级转换
+    class socketlb {
+        +Enable(logger, sysctl, lnc)
     }
-    class BPFLXC {
+    class bpf_lxc {
         +lb4_lookup_service()
         +CONFIG(native_vpc_vni)
     }
 
-    LBWriter ..> Service : 读 前端
-    LBWriter ..> Backend : 读 后端集合
-    LBWriter --> Maglev : 写 一致性哈希表
-    LBWriter --> LBMaps : 写 BPF LB map
-    SocketLB ..> Backend : 读 后端
-    BPFLXC ..> LBMaps : 读 service 查找（VNI=0 时）
+    Writer ..> Service : 读 前端
+    Writer ..> Backend : 读 后端集合
+    BPFOps --> Maglev : 写 一致性哈希表
+    BPFOps --> LBMaps : 写 BPF LB map
+    socketlb ..> Backend : 读 后端
+    bpf_lxc ..> LBMaps : 读 service 查找（VNI=0 时）
 ```
 
-> 图例：实线=写；虚线=读。**backend key = (IP, port, protocol)，地址是裸 IP，无 VNI。**
+> 图例：实线=写；虚线=读。**打磨修正**：`LBWriter` 拆成 `Writer`（选 backend）+ `BPFOps`（写 BPF map）；
+> `SocketLB`→`socketlb`（包，函数 `Enable`）；`BPFLXC`→`bpf_lxc`。**backend key = (IP, port, protocol)，地址是裸 IP，无 VNI。**
 
 ## 3. 状态所有权
 

@@ -41,13 +41,14 @@ classDiagram
         +IP +Family +Key +ClusterID
     }
     class Loader {
-        +compileAndLoad(ep)
-        +native_vpc_vni config
+        +ReloadDatapath(ctx, ep, lnc, stats)
+        +EndpointHash(cfg, lnCfg)
+        +WriteEndpointConfig(w, e, lnCfg)
     }
-    class EndpointRegenerator {
-        +Regenerate(ep)
+    class Endpoint {
+        +Regenerate(regenMetadata)
     }
-    class BPFLXC {
+    class bpf_lxc {
         +CONFIG(native_vpc_vni)
         +ipcache_lookup4_vni()
         +frag_scope_vni()
@@ -57,13 +58,14 @@ classDiagram
     BPFListener ..> IPCache : 读 订阅
     BPFListener --> Key : 写 plain entry（VNI=0）
     BPFListener --> VniKey : 写 VNI entry（VNI≠0）
-    EndpointRegenerator --> Loader : 写 触发加载
-    Loader --> BPFLXC : 写 加载 + native_vpc_vni 配置
-    BPFLXC ..> VniKey : 读 identity 解析
-    BPFLXC ..> EndpointKey : 读 本地 endpoint 元数据（非权威）
+    Endpoint --> Loader : 写 触发 ReloadDatapath
+    Loader --> bpf_lxc : 写 加载 + native_vpc_vni 配置
+    bpf_lxc ..> VniKey : 读 identity 解析
+    bpf_lxc ..> EndpointKey : 读 本地 endpoint 元数据（非权威）
 ```
 
-> 图例：实线=写；虚线=读；`o--`/持有类关系不在此图展开。
+> 图例：实线=写；虚线=读。**打磨修正**：`Loader` 是接口（`pkg/datapath/types/loader.go`，实现 `loader`），
+> 方法为 `ReloadDatapath`（非 `compileAndLoad`）；`bpf_lxc` 是 BPF 程序（`bpf/bpf_lxc.c`），不是 Go 对象。
 > 关键：`cilium_lxc`（`EndpointKey`）按裸 IP 键，**非权威**；VNI 场景的 identity 解析走 `VniKey`。
 
 ## 3. 状态所有权

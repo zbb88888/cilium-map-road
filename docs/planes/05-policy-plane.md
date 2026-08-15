@@ -23,30 +23,29 @@ classDiagram
     class PolicyRepository {
         +AddRules / DeleteRules
     }
-    class Distillery {
+    class policyCache {
         +compile(rules) mapstate
     }
     class SelectorCache {
         +GetIdentitySelections(selector)
     }
-    class MapState {
+    class mapState {
         +identity/port 规则
     }
-    class LabelsFilter {
+    class labelsfilter {
         +Filter(labels) identityLabels
     }
-    class GlobalIdentityKey {
+    class GlobalIdentity {
         +GetKey() 含 VNI label
     }
-    class FQDNService {
+    class FQDNDataServer {
         +identityToIPs（VNIs map）
-        +UpdateIdentities()
     }
     class DNSProxy {
         +LookupEndpointByIP(ip)
         +UpdateAllowed()
     }
-    class AccessLogRecord {
+    class LogRecord {
         +EndpointInfo.VNIID
     }
     class EndpointManager {
@@ -56,18 +55,21 @@ classDiagram
         +LookupSecIDByIPForVNI / Unambiguous
     }
 
-    PolicyRepository ..> Distillery : 读 规则编译
-    Distillery ..> SelectorCache : 读 selector→identity
-    SelectorCache ..> GlobalIdentityKey : 读 identity（VNI label）
-    LabelsFilter --> GlobalIdentityKey : 写 强制 VNI identity label
-    Distillery --> MapState : 写 identity/端口规则
-    FQDNService ..> EndpointManager : 读 (VNI,IP) endpoint
-    FQDNService ..> IPCache : 读 VNI-scoped 身份
+    PolicyRepository ..> policyCache : 读 规则编译
+    policyCache ..> SelectorCache : 读 selector→identity
+    SelectorCache ..> GlobalIdentity : 读 identity（VNI label）
+    labelsfilter --> GlobalIdentity : 写 强制 VNI identity label
+    policyCache --> mapState : 写 identity/端口规则
+    FQDNDataServer ..> EndpointManager : 读 (VNI,IP) endpoint
+    FQDNDataServer ..> IPCache : 读 VNI-scoped 身份
     DNSProxy ..> EndpointManager : 读 unambiguous endpoint
-    DNSProxy ..> AccessLogRecord : 写 L7 记录（VNIID）
+    DNSProxy --> LogRecord : 写 L7 记录（VNIID）
 ```
 
-> 图例：实线=写；虚线=读。策略面「经 identity 天然 VNI 化」的关键是 `LabelsFilter` 强制把 VNI label 保留为 identity label。
+> 图例：实线=写；虚线=读。**打磨修正**：无 `Distillery` 类型，实际是 `policyCache`（`pkg/policy/distillery.go`）；
+> `mapState` 未导出（别名 `MapStateMap`）；`labelsfilter` 是包（函数 `Filter`），非 struct；
+> `FQDNDataServer`（`pkg/fqdn/service/service.go`）替代原 `FQDNService`；`GlobalIdentity`/`LogRecord` 与前后面命名对齐。
+> 策略面「经 identity 天然 VNI 化」的关键是 `labelsfilter.Filter` 强制把 VNI label 保留为 identity label。
 
 ## 3. 状态所有权
 
@@ -75,10 +77,10 @@ classDiagram
 | --- | --- | --- |
 | policy 规则 | `PolicyRepository` | 控制面 watcher 写入 |
 | selector→identity | `SelectorCache` | 经 identity 解析 |
-| 编译后 mapstate | `MapState` | 供转发面下发 policymap |
-| FQDN→IP 映射 | `FQDNService` | 带 `VNIs map` |
+| 编译后 mapstate | `mapState` | 供转发面下发 policymap |
+| FQDN→IP 映射 | `FQDNDataServer` | 带 `VNIs map` |
 | L7 规则 | `DNSProxy` / `Envoy` | 代理执行 |
-| accesslog | `AccessLogRecord` | 带 `VNIID` |
+| accesslog | `LogRecord` | 带 `VNIID` |
 
 ## 4. 读者/写者矩阵（承上启下）
 
@@ -87,9 +89,9 @@ classDiagram
 | 承上（读） | 读 | 控制面 watcher | CNP/CCNP 规则 | 建 policy 仓储 |
 | 承上（读） | 读 | 缓存面 identity | identity（VNI label） | selector 解析 |
 | 承上（读） | 读 | 缓存面 `IPCache` / `EndpointManager` | (VNI,IP) 身份 | FQDN/L7 归属 |
-| 启下（写） | 写 | `MapState` | identity/端口规则 | 下发转发面 |
+| 启下（写） | 写 | `mapState` | identity/端口规则 | 下发转发面 |
 | 启下（写） | 写 | `DNSProxy` / `Envoy` | L7 规则 | 代理执行 |
-| 启下（写） | 写 | `AccessLogRecord` | VNIID | 供切面富化 |
+| 启下（写） | 写 | `LogRecord` | VNIID | 供切面富化 |
 
 ## 5. 层间概览（聚焦策略面）
 

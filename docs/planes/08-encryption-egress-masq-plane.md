@@ -22,29 +22,30 @@ classDiagram
     class WireGuardAgent {
         +peer 选择（node/endpoint IP）
     }
-    class IPSecManager {
+    class IPSecAgent {
         +xfrm 状态
     }
-    class EgressGatewayManager {
+    class EgressManager {
         +policy 匹配（source IP）
     }
     class IPMasqAgent {
         +ipmasq 规则（CIDR）
     }
-    class BPFLXC {
+    class bpf_lxc {
         +egress_gateway 查找
         +encrypt 查找
     }
 
-    EgressGatewayManager ..> Endpoint : 读 source IP
-    EgressGatewayManager --> EgressMap : 写 egress map
+    EgressManager ..> Endpoint : 读 source IP
+    EgressManager --> EgressMap : 写 egress map
     WireGuardAgent ..> NodeIP : 读 peer IP
     IPMasqAgent --> IPMasqMap : 写 ipmasq map
-    BPFLXC ..> EgressMap : 读 egress 查找
-    BPFLXC ..> EncryptMap : 读 加密 peer 选择
+    bpf_lxc ..> EgressMap : 读 egress 查找
+    bpf_lxc ..> EncryptMap : 读 加密 peer 选择
 ```
 
-> 图例：实线=写；虚线=读。**所有选择键都是裸 IP（source IP / peer IP / CIDR），无 VNI。**
+> 图例：实线=写；虚线=读。**打磨修正**：实际类型 `wireguard/agent.Agent`、`ipsec.Agent`、`egressgateway.Manager`；
+> `BPFLXC`→`bpf_lxc`。**所有选择键都是裸 IP（source IP / peer IP / CIDR），无 VNI。**
 
 ## 3. 状态所有权
 

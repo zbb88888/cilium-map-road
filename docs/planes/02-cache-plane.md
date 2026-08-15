@@ -52,7 +52,8 @@ classDiagram
     }
     class CachingIdentityAllocator {
         +GetIdentityCache()
-        +ForeachCache()
+        +AllocateIdentity(ctx, lbls, notify, oldNID)
+        +Release(ctx, id, notify)
     }
     class BPFListener {
         +OnIPIdentityCacheChange(mod, prefix, old, new, ...)
@@ -60,18 +61,19 @@ classDiagram
     class Endpoint {
         +VNIID uint64
     }
-    class KVStoreSynchronizer {
+    class IPIdentitySynchronizer {
         +Upsert(params) / Delete(ip, vni)
     }
     class DNSProxy {
         +LookupEndpointByIP(ip)
     }
-    class HubbleObserver {
-        +LookupSecIDByIP(ip)
+    class EndpointResolver {
+        +LookupSecIDByIPForVNI(ip, vni)
+        +GetK8sMetadataForVNI(ip, vni)
     }
 
     Endpoint --> IPCache : 写 Upsert
-    KVStoreSynchronizer --> IPCache : 写 Upsert
+    IPIdentitySynchronizer --> IPCache : 写 Upsert
     Endpoint --> EndpointManager : 写 注册/注销
     Endpoint --> IDManager : 写 identity 引用
     Endpoint --> CachingIdentityAllocator : 写 分配 identity
@@ -81,7 +83,7 @@ classDiagram
     BPFListener ..> IPCache : 读 订阅
     DNSProxy ..> EndpointManager : 读 LookupIPUnambiguous
     DNSProxy ..> IPCache : 读 LookupSecIDByIPUnambiguous
-    HubbleObserver ..> IPCache : 读 身份查询
+    EndpointResolver ..> IPCache : 读 VNI-scoped 身份/元数据
 ```
 
 > 图例：实线=写（写者→被写对象）；虚线=读（读者→数据源）；`o--`=持有（非数据）。

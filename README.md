@@ -11,6 +11,7 @@
 | --- | --- |
 | [docs/00-methodology.md](docs/00-methodology.md) | 做事思路：分层原则、读者/写者关系、图式约定、验收门禁 |
 | [docs/01-planes-overview.md](docs/01-planes-overview.md) | 十面总览 + 每面文件梳理 + 层间交互图 + 层×组件矩阵 |
+| [docs/02-polish-tracker.md](docs/02-polish-tracker.md) | 打磨追踪（逐层·逐个对象四项核对） |
 | [docs/planes/01-control-plane.md](docs/planes/01-control-plane.md) | 第 1 面：控制面（对象模型 / 读者写者 / 承上启下 / VNI 完备性） |
 | [docs/planes/02-cache-plane.md](docs/planes/02-cache-plane.md) | 第 2 面：缓存面（共享真相 / 读虚写实 / VNI fail-closed） |
 | [docs/planes/03-datapath-plane.md](docs/planes/03-datapath-plane.md) | 第 3 面：转发面（cilium_ipcache_vni 权威 / cilium_lxc 非权威） |

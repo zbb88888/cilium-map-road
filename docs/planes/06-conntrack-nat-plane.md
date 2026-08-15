@@ -38,25 +38,27 @@ classDiagram
     class CtEntry {
         +连接状态 / 反向五元组 / proxy redirect / 归属 identity
     }
-    class CTGC {
-        +ScanAndGC()
+    class GC {
+        +Run(filter)
+        +Enable()
     }
     class EndpointManager {
         +updateOverlappingIPsMetric()
     }
-    class BPFLXC {
+    class bpf_lxc {
         +select_ct_map4/6()
     }
 
-    BPFLXC ..> CtKey4Global : 读 CT 查找
-    BPFLXC --> CtKey4Global : 写 CT 插入
-    BPFLXC --> NatKey4 : 写 NAT 映射
-    BPFLXC ..> NatKey4 : 读 NAT 查找
-    CTGC ..> CtEntry : 读 过期扫描
+    bpf_lxc ..> CtKey4Global : 读 CT 查找
+    bpf_lxc --> CtKey4Global : 写 CT 插入
+    bpf_lxc --> NatKey4 : 写 NAT 映射
+    bpf_lxc ..> NatKey4 : 读 NAT 查找
+    GC ..> CtEntry : 读 过期扫描
     EndpointManager --> Metrics : 写 cilium_native_vpc_overlapping_ips
 ```
 
-> 图例：实线=写；虚线=读。**CT/NAT key 是裸五元组，没有任何 VNI 字段。**
+> 图例：实线=写；虚线=读。**打磨修正**：`CTGC`→`GC`（`pkg/maps/ctmap/gc`，方法 `Run(filter)`）；
+> `BPFLXC`→`bpf_lxc`（BPF 程序）。**CT/NAT key 是裸五元组，没有任何 VNI 字段。**
 
 ## 3. 状态所有权
 

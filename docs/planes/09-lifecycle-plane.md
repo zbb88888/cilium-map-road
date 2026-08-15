@@ -20,35 +20,39 @@
 
 ```mermaid
 classDiagram
-    class EndpointRestore {
-        +RestoreEndpoints()
+    class endpointRestorer {
+        +RestoreOldEndpoints()
+        +WaitForEndpointRestore(ctx)
     }
     class Endpoint {
         +VNIID 序列化
         +SyncVNIFromPodAnnotation()
     }
-    class IPCacheRestore {
-        +RebuildFromDump()
+    class LocalIdentityRestorer {
+        +RestoreLocalIdentities(ipCache)
     }
     class Regenerator {
-        +RegenerateAll()
+        +WaitForFence(ctx)
     }
-    class DynamicLifecycle {
-        +WithDynamicFeature()
+    class dynamiclifecycle {
+        +DynamicFeature（stateDB 表）
     }
-    class ControllerManager {
-        +RunInterval()
+    class Manager {
+        +UpdateController(name, params)
+        +RemoveController(name)
     }
 
-    EndpointRestore ..> Endpoint : 读 序列化状态
-    EndpointRestore ..> K8sAnnotation : 读 tunnel_key
-    EndpointRestore --> Endpoint : 写 重建 endpoint
-    IPCacheRestore --> IPCache : 写 重建 ipcache
+    endpointRestorer ..> Endpoint : 读 序列化状态
+    endpointRestorer ..> K8sAnnotation : 读 tunnel_key
+    endpointRestorer --> Endpoint : 写 重建 endpoint
+    LocalIdentityRestorer --> IPCache : 写 重建 ipcache
     Regenerator --> BPF : 写 再生
-    DynamicLifecycle --> CellLifecycle : 写 启停 cell
+    dynamiclifecycle --> CellLifecycle : 写 启停 cell
 ```
 
-> 图例：实线=写；虚线=读。生命周期面是「流程性」面，关注状态迁移矩阵而非稳态数据键。
+> 图例：实线=写；虚线=读。**打磨修正**：`EndpointRestore`→`endpointRestorer`（`daemon/cmd/endpoint_restore.go`）；
+> `IPCacheRestore`→`LocalIdentityRestorer`（`pkg/ipcache/restore`）；`DynamicLifecycle` 实际是 `dynamiclifecycle` cell + `DynamicFeature` stateDB 表；
+> `ControllerManager`→`Manager`（`pkg/controller/manager.go`）。生命周期面是「流程性」面，关注状态迁移矩阵而非稳态数据键。
 
 ## 3. 状态所有权
 
@@ -56,10 +60,10 @@ classDiagram
 
 | 迁移 | 写入者 | 去向 |
 | --- | --- | --- |
-| endpoint 恢复（含 VNIID） | `EndpointRestore` | 缓存面 endpoint 索引 |
-| ipcache 重建（VNI-scoped map） | `IPCacheRestore` | 缓存面 ipcache |
+| endpoint 恢复（含 VNIID） | `endpointRestorer` | 缓存面 endpoint 索引 |
+| ipcache 重建（VNI-scoped map） | `LocalIdentityRestorer` | 缓存面 ipcache |
 | BPF 再生 | `Regenerator` | 转发面 |
-| cell 启停 | `DynamicLifecycle` | 装配面 |
+| cell 启停 | `dynamiclifecycle` | 装配面 |
 
 ## 4. 读者/写者矩阵（承上启下）
 

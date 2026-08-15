@@ -26,10 +26,10 @@ classDiagram
     class MonitorAgent {
         +Subscribe() / SendEvent()
     }
-    class TraceNotifyParser {
+    class ThreeFourParser {
         +DecodeTraceNotify()
     }
-    class L7Parser {
+    class SevenParser {
         +DecodeLogRecord()
     }
     class EndpointResolver {
@@ -43,28 +43,32 @@ classDiagram
         +LookupIPWithVNI(ip, vni)
         +LookupIPUnambiguous(ip)
     }
-    class AccessLogRecord {
+    class LogRecord {
         +EndpointInfo.VNIID
     }
-    class FlowProto {
+    class Flow {
         +Endpoint.vni_id
         +IPCacheNotification.vni
     }
-    class MetricsContext {
-        +vni / source_vni / destination_vni
+    class ContextOptions {
+        +GetLabelNames()
+        +GetLabelValues(flow)
     }
 
-    TraceNotifyParser ..> MonitorAgent : 读 datapath 事件
-    TraceNotifyParser ..> EndpointManager : 读 local endpoint VNI
+    ThreeFourParser ..> MonitorAgent : 读 datapath 事件
+    ThreeFourParser ..> EndpointManager : 读 local endpoint VNI
     EndpointResolver ..> IPCache : 读 VNI-scoped 身份/元数据
-    L7Parser ..> AccessLogRecord : 读 L7 记录（VNIID）
-    TraceNotifyParser --> FlowProto : 写 flow.vni_id
-    L7Parser --> FlowProto : 写 flow.vni_id
-    FlowProto ..> MetricsContext : 读 生成 vni 标签
-    MetricsContext --> Prometheus : 写 vni 指标标签
+    SevenParser ..> LogRecord : 读 L7 记录（VNIID）
+    ThreeFourParser --> Flow : 写 flow.vni_id
+    SevenParser --> Flow : 写 flow.vni_id
+    Flow ..> ContextOptions : 读 生成 vni 标签
+    ContextOptions --> Prometheus : 写 vni 指标标签
 ```
 
-> 图例：实线=写；虚线=读。切面对业务状态是**纯读者**，唯一的「写」是写自己的导出产物。
+> 图例：实线=写；虚线=读。**打磨修正**：`MonitorAgent` 实际是接口 `monitor/agent.Agent`；
+> `ThreeFourParser`/`SevenParser` 实际类型分别是 `threefour.Parser`/`seven.Parser`（同名不同包，故用前缀区分）；
+> `Flow` 是 `api/v1/flow` 生成类型；`ContextOptions` 是 `pkg/hubble/metrics/api` 的类型。
+> 切面对业务状态是**纯读者**，唯一的「写」是写自己的导出产物。
 
 ## 3. 状态所有权
 

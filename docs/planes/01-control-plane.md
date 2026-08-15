@@ -26,23 +26,21 @@
 
 ```mermaid
 classDiagram
-    class Daemon {
-        +daemonConfigParams
-        +nativeVPCDatapathCompatibility() 启动即拒绝 ❌ 面
-    }
     class K8sWatcher {
-        +watch Pods/Nodes/CEPs/CNPs/Services
-        +podVNI(pod) uint32
-        +ciliumEndpointVNI(cep) uint32
+        +ipcache / nodeManager 字段
+        +InitK8sSubsystem(ctx)
+        +WaitForCacheSync(names)
+        +GetCachedPod(ns, name)
     }
     class Endpoint {
         +IPv4/IPv6
         +VNIID uint64
         +GetVNIID() uint64
-        +Regenerate() 触发再生
+        +SyncVNIFromPodAnnotation(pod) bool
+        +Regenerate(regenMetadata) chan bool
     }
     class EndpointManager {
-        +Lookup(id) *Endpoint
+        +Lookup(id)
         +LookupIPWithVNI(ip, vni)
         +LookupIPUnambiguous(ip)
         +LookupIPAnyVNI(ip)
@@ -57,35 +55,37 @@ classDiagram
         +Remove(identity)
         +Subscribe(observer)
     }
-    class GlobalIdentityKey {
+    class GlobalIdentity {
         +GetKey() string  含 VNI label
     }
     class IPAM {
         +ipv4Allocator / ipv6Allocator
-        +AllocateIP() / ReleaseIP()
+        +AllocateIP(ip, owner, pool)
+        +ReleaseIP(ip, pool)
     }
     class NodeManager {
-        +NodeUpdated(n) / NodeDeleted(n)
+        +NodeUpdated(n)
+        +NodeDeleted(n)
+        +NodeSync()
     }
-
     class K8sAPI {
         Pod/Node/CEP/CNP/Service
     }
 
-    Daemon *-- K8sWatcher : 组合（非数据）
-    Daemon *-- Endpoint : 组合（非数据）
     K8sWatcher ..> K8sAPI : 读 watch
+    K8sWatcher --> IPCache : 写 Upsert(KeyWithVNI)
+    K8sWatcher --> NodeManager : 写 NodeUpdated/Deleted/Sync
     Endpoint --> EndpointManager : 写 注册/注销
     Endpoint --> IDManager : 写 identity 引用
     Endpoint --> IPCache : 写 IP→identity
-    Endpoint --> IPAM : 写 IP 申请/释放
+    Endpoint --> IPAM : 写 AllocateIP/ReleaseIP
     Endpoint ..> IPCache : 读 已有映射（恢复/再生）
     Endpoint ..> IDManager : 读 identity 解析
-    K8sWatcher ..> GlobalIdentityKey : 读 用 labels 构造 key
-    K8sWatcher --> NodeManager : 写 节点事件
 ```
 
-> 图例：实线=写（写者→被写对象）；虚线=读（读者→数据源）；`*--`=组合/归属（非数据）。
+> 图例：实线=写（写者→被写对象）；虚线=读（读者→数据源）。
+> **打磨修正**：控制面已 hive 化，无 `Daemon struct`——编排是 `configureDaemon(ctx, daemonParams)`（依赖由 hive 注入），
+> 启动拒绝是 `nativeVPCDatapathCompatibility(daemonConfigParams)`；`podVNI()`/`ciliumEndpointVNI()` 是 `pkg/k8s/watchers` 包级自由函数，非 `K8sWatcher` 方法。
 > `EndpointManager`、`IPCache`、`IDManager` 是**缓存面**持有的共享状态对象；
 > 控制面里的 `Endpoint`/`K8sWatcher`/`IPAM` 是这些对象的**写者**。这就是「控制面写、缓存面持有」。
 

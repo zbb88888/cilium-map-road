@@ -48,7 +48,8 @@ classDiagram
     TestAgentCellNativeVPC ..> Hive : 读 校验 native-vpc 整图
 ```
 
-> 图例：实线=写（provide）；虚线=读（consume）。装配面是「组件视图的代码化」，cell 之间的 provide/consume 就是层×组件矩阵的边。
+> 图例：实线=写（provide）；虚线=读（consume）。**打磨修正**：`TestAgentCell`/`TestAgentCellNativeVPC` 是测试函数（`daemon/cmd/cells_test.go`），
+> 不是类型，在此表为校验动作。装配面是「组件视图的代码化」，cell 之间的 provide/consume 就是层×组件矩阵的边。
 
 ## 3. 状态所有权
 
