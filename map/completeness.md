@@ -54,12 +54,12 @@
 | 归属层 | 对象 | 读者 | 写者 | 完备性 |
 | --- | --- | --- | --- | --- |
 | 1 | K8sWatcher | K8sAPI | IPCache(2)、NodeManager(1) | ✅ |
-| 1 | Endpoint | IPCache(2)、IDManager(2) | EndpointManager(2)、IDManager(2)、IPCache(2)、IPAM(1)、Loader(3) | ✅ |
-| 1 | IPAM | — | Endpoint | ✅ |
+| 1 | Endpoint | IPCache(2)（DNS rules/named ports）、IDManager(2) | EndpointManager(2)（经 AddEndpoint）、IDManager(2)（Add/Remove）、IPCache(2)（经 IPIdentitySynchronizer）、Loader(3)（Regenerate） | ✅ |
+| 1 | IPAM | 控制面查询 | endpointRestorer(9)（restore 分配/释放）、infra allocator/CNI handler（daemon） | ✅ |
 | 1 | NodeManager | 转发面/缓存面 | K8sWatcher | ✅ |
-| 1 | CachingIdentityAllocator | 缓存面查询、策略面 | Endpoint（分配） | ✅ |
-| 1 | GlobalIdentity | SelectorCache(5)、identity allocator | labelsfilter(1)、identity allocator | ✅ |
-| 1 | labelsfilter | — | GlobalIdentity（VNI label 强制） | ✅ |
+| 1 | CachingIdentityAllocator | 缓存面查询、策略面 | Endpoint（AllocateIdentity） | ✅ |
+| 1 | GlobalIdentity | SelectorCache(5) | CachingIdentityAllocator（GetCIDKeyFromLabels 构造，经 labelsfilter.Filter 注入 VNI label） | ✅ |
+| 1 | labelsfilter | CachingIdentityAllocator（调 Filter） | —（纯函数变换） | ✅ |
 | 1 | K8sAPI | K8sWatcher | 外部 | ✅ |
 | 2 | IPCache | BPFListener(3)、DNSProxy(5)、EndpointResolver(4)、FQDNDataServer(5) | Endpoint(1)、K8sWatcher(1)、IPIdentitySynchronizer(2) | ✅ |
 | 2 | Identity | 查询方 | IPCache（Upsert 存入） | ✅ |

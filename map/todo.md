@@ -32,8 +32,19 @@
 - [x] `map/00-overview.md` 层×组件矩阵刷新（82 对象 × 4 组件）
 - [x] 铺 `road/clustermesh-kvstoremesh.md` 补齐 clustermesh-apiserver 零覆盖
 
-## P3：术语/编号一致性收尾 ✅
+## 新任务：逐层打磨对象读者/写者（源码级校验）
 
-- [x] broken link 全量查无
-- [x] 数字核对：十面索引 / 82 对象（30+5+6+8+7+5+6+4+5+6）/ 覆盖矩阵（层+组件）
-- [x] operator/clustermesh/hubble-relay 对象读写边细化入账
+> 方法：对每层每个对象，grep 实际调用点，验证每条读/写边，修正错边、补缺边。
+
+| 层 | 进度 | 本轮修正 |
+| --- | --- | --- |
+| 1 控制面 | ✅ | Endpoint 不写 IPAM（写者是 endpointRestorer/infra allocator）；Endpoint→IPCache 是经 IPIdentitySynchronizer 链式写；Endpoint 读 IPCache（DNS rules/named ports）；GlobalIdentity 写者= CachingIdentityAllocator（非 labelsfilter 直接写） |
+| 2 缓存面 | ⬜ | |
+| 3 转发面 | ⬜ | |
+| 4 切面 | ⬜ | |
+| 5 策略面 | ⬜ | |
+| 6 CT/NAT | ⬜ | |
+| 7 服务/LB | ⬜ | |
+| 8 加密/egress/masq | ⬜ | |
+| 9 生命周期 | ⬜ | |
+| 10 装配 | ⬜ | |

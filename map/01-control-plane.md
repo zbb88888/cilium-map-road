@@ -75,11 +75,10 @@ classDiagram
     K8sWatcher ..> K8sAPI : 读 watch
     K8sWatcher --> IPCache : 写 Upsert(KeyWithVNI)
     K8sWatcher --> NodeManager : 写 NodeUpdated/Deleted/Sync
-    Endpoint --> EndpointManager : 写 注册/注销
-    Endpoint --> IDManager : 写 identity 引用
-    Endpoint --> IPCache : 写 IP→identity
-    Endpoint --> IPAM : 写 AllocateIP/ReleaseIP
-    Endpoint ..> IPCache : 读 已有映射（恢复/再生）
+    Endpoint --> EndpointManager : 写 注册/注销（经 AddEndpoint）
+    Endpoint --> IDManager : 写 identity 引用（Add/Remove）
+    Endpoint --> IPCache : 写 IP→identity（经 IPIdentitySynchronizer）
+    Endpoint ..> IPCache : 读 DNS rules/named ports
     Endpoint ..> IDManager : 读 identity 解析
 ```
 
@@ -88,6 +87,8 @@ classDiagram
 > 启动拒绝是 `nativeVPCDatapathCompatibility(daemonConfigParams)`；`podVNI()`/`ciliumEndpointVNI()` 是 `pkg/k8s/watchers` 包级自由函数，非 `K8sWatcher` 方法。
 > `EndpointManager`、`IPCache`、`IDManager` 是**缓存面**持有的共享状态对象；
 > 控制面里的 `Endpoint`/`K8sWatcher`/`IPAM` 是这些对象的**写者**。这就是「控制面写、缓存面持有」。
+> **打磨修正**：`Endpoint` 不直接写 `IPAM`——IPAM 的写者是 `endpointRestorer`（层 9 restore 分配/释放）与 infra allocator/CNI handler（daemon）；
+> `Endpoint` 只持有 IPAM pool 名。`Endpoint → IPCache` 是经 `IPIdentitySynchronizer` 的链式写。
 
 ## 3. 状态所有权
 
