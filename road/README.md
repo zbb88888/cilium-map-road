@@ -22,6 +22,7 @@
 | P2 | [service-clusterip-to-backend.md](service-clusterip-to-backend.md) | Service ClusterIP → backend（❌ 启动拒绝+数据面绕过） | ✅ |
 | P2 | [fragment-vni-scope.md](fragment-vni-scope.md) | 分片 VNI 作用域（frag key 加 vni + fail-closed） | ✅ |
 | P3 | [assembly-selfcheck.md](assembly-selfcheck.md) | 装配自检（TestAgentCell → Populate → 门禁） | ✅ |
+| 验证 | [mutual-auth.md](mutual-auth.md) | Mutual Auth（非 VNI 特性的找路验证） | ✅ |
 
 ## 待找路
 
