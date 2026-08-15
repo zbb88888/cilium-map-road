@@ -27,7 +27,7 @@ flowchart TD
 | 1 控制面 | `ciliumEndpointVNI` | 远端 watcher 从 CEP annotation 提取 VNI | `pkg/k8s/watchers/cilium_endpoint.go` |
 | 2 缓存面 | `IPCache` | 写 `KeyWithVNI(ip, vni)` → `ip@vni:N` | `pkg/ipcache/ipcache.go` |
 | 2 缓存面 | `IPIdentitySynchronizer` | kvstore 模式：`IPIdentityPair.Vni` + scoped key | `pkg/ipcache/kvstore.go` |
-| 3 转发面 | `BPFListener` | `Vni≠0` 路由到 `cilium_ipcache_vni`（`VniKey`） | `pkg/datapath/ipcache/listener.go` |
+| 3 转发面 | `BPFListener` | `Vni≠0` 分发到 `cilium_ipcache_vni`（`VniKey`），非 L3 路由 | `pkg/datapath/ipcache/listener.go` |
 
 ## 3. 两条传播通道
 

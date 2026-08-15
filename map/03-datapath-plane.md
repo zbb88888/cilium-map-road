@@ -12,7 +12,7 @@
 | VNI ipcache 查找 | `bpf/lib/eps.h` | `cilium_ipcache_vni` map + `ipcache_lookup4/6_vni` |
 | VNI 分片作用域 | `bpf/lib/ipv4.h` | `struct ipv4_frag_id.vni`，fail-closed |
 | loader | `pkg/datapath/loader/` | 编译/加载 BPF，per-endpoint 配置 `native_vpc_vni` |
-| ipcache→BPF 同步 | `pkg/datapath/ipcache/listener.go` | `BPFListener`，VNI 路由到 VNI map |
+| ipcache→BPF 同步 | `pkg/datapath/ipcache/listener.go` | `BPFListener`，按 VNI 分发到 vni/plain map |
 | BPF map 封装 | `pkg/maps/`（ipcache/lxcmap/ctmap/nat/policymap） | 用户态访问 BPF map |
 | ipcache map key | `pkg/maps/ipcache/ipcache.go` | `Key`（plain）/ `VniKey`（VNI） |
 | lxc map | `pkg/maps/lxcmap/lxcmap.go` | `cilium_lxc`（本地 endpoint 元数据，非权威） |
@@ -125,7 +125,7 @@ flowchart TD
 | VNI ipcache map | `bpf/lib/eps.h` | `cilium_ipcache_vni` + `struct ipcache_vni_key`（LPM key 含 vni） |
 | VNI 查找函数 | `bpf/lib/eps.h` | `ipcache_lookup4_vni` / `ipcache_lookup6_vni` |
 | Go 侧 key 对齐 | `pkg/maps/ipcache/ipcache.go` | `VniKey` 与 `struct ipcache_vni_key` 布局一致 |
-| VNI 路由 | `pkg/datapath/ipcache/listener.go` + `listener_vni_test.go` | `Vni≠0` 写 vni map，`Vni=0` 写 plain map |
+| VNI 分发（按 VNI 落表，非 L3 路由） | `pkg/datapath/ipcache/listener.go` + `listener_vni_test.go` | `Vni≠0` 写 vni map，`Vni=0` 写 plain map |
 | 分片 VNI 作用域 | `bpf/lib/ipv4.h` | `ipv4_frag_id.vni`，`frag_scope_vni()` 仅 bpf_lxc 填 VNI |
 | fail-closed 丢弃 | `bpf/lib/ipv4.h`、`drop_reasons.h` | 跨程序分片 miss → `DROP_FRAG_NOT_FOUND`；`DROP_INVALID_VNI` |
 | 非权威 lxc | `pkg/maps/lxcmap/lxcmap.go` | `EndpointKey` 只含 `IP/Family/Key/ClusterID`，无 VNI |

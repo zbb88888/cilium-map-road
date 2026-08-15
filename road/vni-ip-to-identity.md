@@ -29,7 +29,7 @@ flowchart TD
 | 缓存面 | `IPCache` 裸 IP key | `KeyWithVNI` → `ip@vni:<vni>`；`Identity.Vni` 字段；`ipToVNIKeys` 反查；`LookupSecIDByIPForVNI`(key-exact) + `LookupSecIDByIPUnambiguous`(fail-closed) |
 | 缓存面 | `EndpointManager` 裸 IP 索引 | `LookupIPWithVNI` / `LookupIPUnambiguous` / `LookupIPAnyVNI` |
 | 缓存面 | kvstore 裸 IP | `IPIdentityPair.Vni` + scoped key |
-| 转发面 | `BPFListener` 只写 v2 map | 按 `Vni≠0` 路由到 `cilium_ipcache_vni`；`VniKey` 与 `struct ipcache_vni_key` 布局对齐 |
+| 转发面 | `BPFListener` 只写 v2 map | 按 `Vni≠0` 分发到 `cilium_ipcache_vni`（非 L3 路由）；`VniKey` 与 `struct ipcache_vni_key` 布局对齐 |
 | 转发面 | `bpf_lxc` 只查 v2 | `CONFIG(native_vpc_vni)`；`ipcache_lookup4_vni/6_vni` 查 `cilium_ipcache_vni` |
 | 切面 | flow 只有 IP/identity | `Flow.Endpoint.vni_id` + `IPCacheNotification.vni`；`EndpointResolver` 从 identity VNI label 派生 VNI → `GetK8sMetadataForVNI` |
 

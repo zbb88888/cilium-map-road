@@ -142,7 +142,7 @@ Cilium 的顶层接口是 **Kubernetes CRD + CNI + kvstore + daemon REST API**�
 | --- | --- |
 | `bpf/*.c`、`bpf/lib/*.h` | 实际 datapath 程序（lxc/host/overlay/xdp） |
 | `pkg/datapath/`（loader/connector/iptables/tunnel/node/…） | 把状态 apply 到内核 |
-| `pkg/datapath/ipcache/listener.go` | ipcache → BPF map 同步（含 VNI 路由） |
+| `pkg/datapath/ipcache/listener.go` | ipcache → BPF map 同步（含按 VNI 分发落表） |
 | `pkg/maps/`（ipcache/ctmap/nat/policymap/lxcmap/…） | BPF map 封装 |
 | `pkg/ebpf/`、`pkg/bpf/` | BPF 基础设施 |
 | `pkg/endpoint/bpf.go`、`pkg/endpoint/regeneration/` | endpoint 侧 BPF 再生 |
