@@ -6,6 +6,7 @@
 > 3. 每一个对象有多少读者、写者，是否完备？
 >
 > 三问逐级下钻：层 → 对象 → 读写边。任何一层/一对象/一条边不齐，地图就不算完备。
+> 归属规则：**谁写状态，谁就是归属层**；跨层对象只在本表出现一次（归属层），其它层以「读/写」引用它。
 
 ## 问 1：当前一共多少层，是否完备？
 
@@ -26,80 +27,74 @@
 
 ## 问 2：每一层有多少核心对象，是否完备？
 
-**答：共 58 个去重核心对象。**（值/键类型也计入，因为它们是被读写的状态载体。）
+**答：共 58 个去重核心对象，按归属层归位。**
 
-| 层 | 核心对象 | 计数 |
+| 层 | 核心对象（归属本层） | 计数 |
 | --- | --- | --- |
-| 1 控制面 | K8sWatcher、Endpoint、EndpointManager、IPCache、IDManager、GlobalIdentity、IPAM、NodeManager、K8sAPI | 9 |
-| 2 缓存面 | IPCache、Identity、EndpointManager、IDManager、CachingIdentityAllocator、BPFListener、Endpoint、IPIdentitySynchronizer、DNSProxy、EndpointResolver | 10 |
-| 3 转发面 | IPCache、BPFListener、VniKey、Key、EndpointKey、Loader、Endpoint、bpf_lxc | 8 |
-| 4 切面 | MonitorAgent、ThreeFourParser、SevenParser、EndpointResolver、IPCache、EndpointManager、LogRecord、Flow、ContextOptions | 9 |
-| 5 策略面 | PolicyRepository、policyCache、SelectorCache、mapState、labelsfilter、GlobalIdentity、FQDNDataServer、DNSProxy、LogRecord、EndpointManager、IPCache | 11 |
-| 6 CT/NAT | TupleKey4、CtKey4Global、NatKey4、CtEntry、GC、EndpointManager、bpf_lxc | 7 |
-| 7 服务/LB | Service、Backend、Writer、BPFOps、Maglev、socketlb、bpf_lxc | 7 |
-| 8 加密/egress/masq | WireGuardAgent、IPSecAgent、EgressManager、IPMasqAgent、bpf_lxc | 5 |
-| 9 生命周期 | endpointRestorer、Endpoint、LocalIdentityRestorer、Regenerator、dynamiclifecycle、Manager | 6 |
+| 1 控制面 | K8sWatcher、Endpoint、IPAM、NodeManager、CachingIdentityAllocator、GlobalIdentity、labelsfilter、K8sAPI(外部) | 8 |
+| 2 缓存面 | IPCache、Identity、EndpointManager、IDManager、IPIdentitySynchronizer | 5 |
+| 3 转发面 | BPFListener、Loader、bpf_lxc、VniKey、Key、EndpointKey | 6 |
+| 4 切面 | MonitorAgent、ThreeFourParser、SevenParser、EndpointResolver、Flow、ContextOptions | 6 |
+| 5 策略面 | PolicyRepository、policyCache、SelectorCache、mapState、FQDNDataServer、DNSProxy、LogRecord | 7 |
+| 6 CT/NAT | TupleKey4、CtKey4Global、NatKey4、CtEntry、GC | 5 |
+| 7 服务/LB | Service、Backend、Writer、BPFOps、Maglev、socketlb | 6 |
+| 8 加密/egress/masq | WireGuardAgent、IPSecAgent、EgressManager、IPMasqAgent | 4 |
+| 9 生命周期 | endpointRestorer、LocalIdentityRestorer、Regenerator、dynamiclifecycle、Manager | 5 |
 | 10 装配 | Hive、Cell、Module、Agent、TestAgentCell、TestAgentCellNativeVPC | 6 |
 
-> 跨层共享对象（`IPCache`、`EndpointManager`、`Endpoint`、`IDManager`、`GlobalIdentity`、`DNSProxy`、`LogRecord`、`bpf_lxc`、`EndpointResolver`）以**归属层**为准，其它层出现时标注为「读/写该对象」。
+> 归属澄清（本轮修正）：`CachingIdentityAllocator`/`GlobalIdentity`/`labelsfilter` 属**控制面**（identity 分配与派生），
+> 策略面只**读**其结果；`DNSProxy`/`LogRecord` 属**策略面**（L7 代理/accesslog），切面只读 LogRecord；
+> `EndpointResolver` 属**切面**（hubble parser），缓存面只被读。
 
 ## 问 3：每一个对象有多少读者、写者，是否完备？
 
-**判定规则**：
-- 无孤儿：每个对象至少有一个读者或写者（纯键/值类型如 `VniKey`/`CtEntry`/`Flow` 以「被写 + 被读」计）。
-- 无悬空状态：每块业务状态都有写者（归属层明确）。
-- 每条边都有读虚写实箭头对应，且方向正确。
+**判定规则**：无孤儿对象（每个对象至少有一读者或写者）；无悬空状态（每块状态有写者）；读虚写实边齐全且方向正确。
+括号内数字 = 该读者/写者所在归属层。
 
 | 归属层 | 对象 | 读者 | 写者 | 完备性 |
 | --- | --- | --- | --- | --- |
-| 1 | K8sWatcher | K8sAPI | IPCache、NodeManager | ✅ |
-| 1 | Endpoint | IPCache、IDManager | EndpointManager、IDManager、IPCache、IPAM、Loader | ✅ |
-| 1 | IPAM | — | Endpoint（Allocate/Release） | ✅ |
+| 1 | K8sWatcher | K8sAPI | IPCache(2)、NodeManager(1) | ✅ |
+| 1 | Endpoint | IPCache(2)、IDManager(2) | EndpointManager(2)、IDManager(2)、IPCache(2)、IPAM(1)、Loader(3) | ✅ |
+| 1 | IPAM | — | Endpoint | ✅ |
 | 1 | NodeManager | 转发面/缓存面 | K8sWatcher | ✅ |
+| 1 | CachingIdentityAllocator | 缓存面查询、策略面 | Endpoint（分配） | ✅ |
+| 1 | GlobalIdentity | SelectorCache(5)、identity allocator | labelsfilter(1)、identity allocator | ✅ |
+| 1 | labelsfilter | — | GlobalIdentity（VNI label 强制） | ✅ |
 | 1 | K8sAPI | K8sWatcher | 外部 | ✅ |
-| 2 | IPCache | BPFListener、DNSProxy、EndpointResolver、FQDNDataServer | Endpoint、K8sWatcher、IPIdentitySynchronizer | ✅ |
+| 2 | IPCache | BPFListener(3)、DNSProxy(5)、EndpointResolver(4)、FQDNDataServer(5) | Endpoint(1)、K8sWatcher(1)、IPIdentitySynchronizer(2) | ✅ |
 | 2 | Identity | 查询方 | IPCache（Upsert 存入） | ✅ |
-| 2 | EndpointManager | DNSProxy、ThreeFourParser、FQDNDataServer | Endpoint | ✅ |
-| 2 | IDManager | Endpoint（解析）、策略面 | Endpoint（引用） | ✅ |
-| 2 | CachingIdentityAllocator | 缓存面查询 | Endpoint（分配） | ✅ |
-| 2 | BPFListener | IPCache（订阅） | IPCache（通知） | ✅ |
+| 2 | EndpointManager | DNSProxy(5)、ThreeFourParser(4)、FQDNDataServer(5) | Endpoint(1) | ✅ |
+| 2 | IDManager | Endpoint(1)、策略面 | Endpoint(1) | ✅ |
 | 2 | IPIdentitySynchronizer | kvstore | IPCache | ✅ |
-| 2 | DNSProxy | EndpointManager、IPCache | LogRecord | ✅ |
-| 2 | EndpointResolver | IPCache | — | ✅ |
-| 3 | BPFListener | IPCache | Key、VniKey | ✅ |
+| 3 | BPFListener | IPCache(2) | Key、VniKey | ✅ |
 | 3 | Loader | — | bpf_lxc（加载） | ✅ |
-| 3 | bpf_lxc | VniKey、EndpointKey、CtKey、NatKey、EgressMap、EncryptMap | CtKey、NatKey、policymap | ✅ |
+| 3 | bpf_lxc | VniKey、EndpointKey、CtKey(6)、NatKey(6)、LBMaps(7)、EgressMap(8)、EncryptMap(8) | CtKey(6)、NatKey(6)、policymap(5) | ✅ |
 | 3 | VniKey/Key/EndpointKey | bpf_lxc | BPFListener/Endpoint | ✅（键类型） |
 | 4 | MonitorAgent | ThreeFourParser | 转发面（事件） | ✅ |
-| 4 | ThreeFourParser | MonitorAgent、EndpointManager | Flow | ✅ |
-| 4 | SevenParser | LogRecord | Flow | ✅ |
-| 4 | EndpointResolver | IPCache | — | ✅ |
+| 4 | ThreeFourParser | MonitorAgent、EndpointManager(2) | Flow | ✅ |
+| 4 | SevenParser | LogRecord(5) | Flow | ✅ |
+| 4 | EndpointResolver | IPCache(2) | — | ✅ |
 | 4 | Flow | ContextOptions、exporter | ThreeFourParser、SevenParser | ✅ |
 | 4 | ContextOptions | Flow | Prometheus | ✅ |
-| 4 | LogRecord | SevenParser | DNSProxy | ✅ |
 | 5 | PolicyRepository | policyCache | 控制面 watcher | ✅ |
 | 5 | policyCache | PolicyRepository、SelectorCache | mapState | ✅ |
-| 5 | SelectorCache | GlobalIdentity | — | ✅ |
+| 5 | SelectorCache | GlobalIdentity(1) | — | ✅ |
 | 5 | mapState | 转发面（policymap 下发） | policyCache | ✅ |
-| 5 | labelsfilter | — | GlobalIdentity（VNI label） | ✅ |
-| 5 | GlobalIdentity | SelectorCache、identity allocator | labelsfilter | ✅ |
-| 5 | FQDNDataServer | EndpointManager、IPCache | — | ✅ |
-| 5 | DNSProxy | EndpointManager | LogRecord | ✅ |
+| 5 | FQDNDataServer | EndpointManager(2)、IPCache(2) | — | ✅ |
+| 5 | DNSProxy | EndpointManager(2)、IPCache(2) | LogRecord | ✅ |
+| 5 | LogRecord | SevenParser(4) | DNSProxy、Envoy | ✅ |
 | 6 | GC | CtEntry（扫描） | CtEntry（删除过期） | ✅ |
-| 6 | bpf_lxc | CtKey4Global、NatKey4 | CtKey4Global、NatKey4 | ✅ |
-| 6 | CtKey4Global/NatKey4/CtEntry | bpf_lxc、GC | bpf_lxc | ✅（键/值类型） |
+| 6 | TupleKey4/CtKey4Global/NatKey4/CtEntry | bpf_lxc(3)、GC | bpf_lxc(3) | ✅（键/值类型） |
 | 7 | Writer | Service、Backend | — | ✅ |
 | 7 | BPFOps | — | Maglev、LBMaps | ✅ |
 | 7 | socketlb | Backend | — | ✅ |
-| 7 | bpf_lxc | LBMaps | — | ✅ |
-| 7 | Service/Backend/Maglev | Writer、socketlb、bpf_lxc | BPFOps | ✅（值类型） |
+| 7 | Service/Backend/Maglev | Writer、socketlb、bpf_lxc(3) | BPFOps | ✅（值类型） |
 | 8 | WireGuardAgent | NodeIP | — | ✅ |
 | 8 | IPSecAgent | — | xfrm | ✅ |
-| 8 | EgressManager | Endpoint（source IP） | EgressMap | ✅ |
+| 8 | EgressManager | Endpoint(1)（source IP） | EgressMap | ✅ |
 | 8 | IPMasqAgent | — | IPMasqMap | ✅ |
-| 8 | bpf_lxc | EgressMap、EncryptMap | — | ✅ |
-| 9 | endpointRestorer | Endpoint、K8sAnnotation | Endpoint（重建） | ✅ |
-| 9 | LocalIdentityRestorer | — | IPCache（重建） | ✅ |
+| 9 | endpointRestorer | Endpoint(1)、K8sAnnotation | Endpoint(1)（重建） | ✅ |
+| 9 | LocalIdentityRestorer | — | IPCache(2)（重建） | ✅ |
 | 9 | Regenerator | — | BPF（再生） | ✅ |
 | 9 | dynamiclifecycle | — | CellLifecycle（启停） | ✅ |
 | 9 | Manager | — | 控制循环 | ✅ |

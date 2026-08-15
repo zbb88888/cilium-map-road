@@ -69,7 +69,8 @@ classDiagram
 > 图例：实线=写；虚线=读。**打磨修正**：无 `Distillery` 类型，实际是 `policyCache`（`pkg/policy/distillery.go`）；
 > `mapState` 未导出（别名 `MapStateMap`）；`labelsfilter` 是包（函数 `Filter`），非 struct；
 > `FQDNDataServer`（`pkg/fqdn/service/service.go`）替代原 `FQDNService`；`GlobalIdentity`/`LogRecord` 与前后面命名对齐。
-> 策略面「经 identity 天然 VNI 化」的关键是 `labelsfilter.Filter` 强制把 VNI label 保留为 identity label。
+> **归属澄清**：`labelsfilter` 与 `GlobalIdentity` 归**控制面**（identity 派生管道，`pkg/labelsfilter`/`pkg/identity/key`），
+> 策略面只读其结果（`SelectorCache` 读 identity）。策略面「经 identity 天然 VNI 化」依赖控制面把 VNI label 强制保留为 identity label。
 
 ## 3. 状态所有权
 
