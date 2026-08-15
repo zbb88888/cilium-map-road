@@ -6,46 +6,63 @@
 ## 1. 层间交互概要图
 
 ```mermaid
-flowchart TD
-    K8S[K8s API / kvstore / CNI]
-    CP[1 控制面<br/>期望状态]
-    CACHE[2 缓存面<br/>内存共享真相]
-    DP[3 转发面<br/>内核 BPF/路由]
-    KERN[内核运行时状态<br/>maps/ct/nat]
-    POL[5 策略面]
-    OBS[4 切面 可观察性]
-    CT[6 连接跟踪/NAT 面]
-    SVC[7 服务/负载均衡面]
-    ENC[8 加密/egress/masquerade 面]
-    LIF[9 生命周期面]
-    ASM[10 装配面 hive]
+flowchart LR
+    subgraph EXT["① 外部事实"]
+        K8S["K8s API / kvstore / CNI"]
+    end
 
-    CP -.->|读 watch/请求| K8S
-    CP -->|写 endpoint/identity/ipam/service 期望| CACHE
+    subgraph CTRL["② 控制面（写期望）"]
+        CP["1 控制面"]
+        LIF["9 生命周期"]
+        ASM["10 装配 hive"]
+    end
+
+    subgraph FEAT["③ 特性域（中间带）"]
+        POL["5 策略"]
+        SVC["7 服务/LB"]
+        ENC["8 加密/egress"]
+    end
+
+    subgraph CACHEB["④ 缓存面（共享真相）"]
+        CACHE["2 缓存面"]
+    end
+
+    subgraph DPB["⑤ 转发面（执行）"]
+        DP["3 转发面"]
+        CT["6 CT/NAT"]
+        KERN["内核运行时 maps/ct/nat"]
+    end
+
+    subgraph OBSB["⑥ 切面（观察）"]
+        OBS["4 切面"]
+    end
+
+    %% 主链：外部 → 控制 → 缓存 → 转发 → 内核
+    CP -.->|读 watch| K8S
+    CP -->|写 期望| CACHE
     DP -.->|读 状态| CACHE
     DP -->|写 apply| KERN
 
-    CP -->|写 policy 触发| POL
-    POL -->|写 identity/端口规则| CACHE
+    %% CT/NAT 挂在转发面
+    DP -->|写 ct/nat| CT
+    DP -.->|读 ct/nat| CT
 
-    OBS -.->|读 快照| CACHE
-    OBS -.->|读 monitor 事件| DP
-
-    DP -->|写 ct/nat 五元组| CT
-    DP -.->|读 ct/nat 查找| CT
-
-    CP -->|写 service 期望| SVC
+    %% 特性域：控制触发，各自落到缓存/转发
+    CP -->|写 触发| POL
+    POL -->|写 规则| CACHE
+    CP -->|写 期望| SVC
     SVC -->|写 LB map| DP
-    DP -.->|读 service 状态| SVC
+    CP -->|写 配置| ENC
+    ENC -->|写 map| DP
 
-    CP -->|写 egress/加密配置| ENC
-    ENC -->|写 加密/egress/masq map| DP
-    DP -.->|读 egress/加密状态| ENC
+    %% 观察：读缓存快照 + 读转发事件
+    OBS -.->|读 快照| CACHE
+    OBS -.->|读 事件| DP
 
-    LIF -.->|读 期望状态| CP
-    LIF -->|写 恢复状态| CACHE
-
-    ASM -.->|装配 依赖注入| CP
+    %% 横切：生命周期恢复、装配注入
+    LIF -.->|读 期望| CP
+    LIF -->|写 恢复| CACHE
+    ASM -.->|装配| CP
 ```
 
 > 图例：实线=写（写者→被写对象）；虚线=读（读者→数据源）；`装配` 是依赖注入关系，非业务读写。
